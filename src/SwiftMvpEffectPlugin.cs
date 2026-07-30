@@ -30,6 +30,7 @@ public sealed class SwiftMvpEffectPlugin(ISwiftlyCore core) : BasePlugin(core)
     private const float EnterMotionSeconds = 0.52f;
     private const float ExitMotionStartSeconds = 1.62f;
     private const float ExitMotionSeconds = 0.62f;
+    private const float OffscreenLeftOffset = -1.0f;
     private const float OffscreenRightOffset = 1.0f;
 
     private const string EffectParticle =
@@ -199,7 +200,7 @@ public sealed class SwiftMvpEffectPlugin(ISwiftlyCore core) : BasePlugin(core)
 
             Logger.LogInformation(
                 "MVP_EFFECT_SPAWN slot={Slot} entities={EntityIndexes} reason={Reason} " +
-                "cp34=({Scale:F2},{OffsetX:F2},{OffsetY:F2}), motion=right-in-out.",
+                "cp34=({Scale:F2},{OffsetX:F2},{OffsetY:F2}), motion=left-in-right-out.",
                 slot,
                 string.Join(
                     ",",
@@ -269,7 +270,7 @@ public sealed class SwiftMvpEffectPlugin(ISwiftlyCore core) : BasePlugin(core)
             particle.ServerControlPointAssignments[0] = 34;
             particle.ServerControlPoints[0] = new Vector(
                 Math.Max(config.Scale * 0.72f, 0.001f),
-                OffscreenRightOffset,
+                OffscreenLeftOffset,
                 config.OffsetY);
             // CP17.x drives particle alpha through C_OP_SetFloat.
             particle.ServerControlPointAssignments[1] = 17;
@@ -350,7 +351,7 @@ public sealed class SwiftMvpEffectPlugin(ISwiftlyCore core) : BasePlugin(core)
             scale = Lerp(config.Scale * 0.72f, config.Scale, transformProgress);
             alpha = EaseOutCubic(progress);
             offsetX = Lerp(
-                OffscreenRightOffset,
+                OffscreenLeftOffset,
                 config.OffsetX,
                 transformProgress);
         }

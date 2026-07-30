@@ -22,11 +22,12 @@ SwiftlyS2 回合 MVP 屏幕粒子插件。运行时使用 owner-only
 - 素材固定为 60 帧、25 FPS、2.4 秒，由一个 60 帧 sequence atlas 播放，避免服务端阶段切换造成卡顿。
 - 每个动画 renderer 必须同时设置 `m_bAnimateInFPS = true` 和
   `m_flAnimationRate = 25.000000`；只设置前者会退化为低频跳帧。
-- 原图 1280×512；生成器等比放入 512×512 透明 carrier，避免 overlay 拉伸。
+- 原图 1280×512；生成器等比放入 512×512 透明 carrier，强制产出无损 4096 atlas，避免
+  overlay 拉伸、MKS 自动降采样和 DXT block 模糊。
 - 单个根的 `m_flDepthSortBias` 固定为 `0`。
 - 每个观看者只创建一个短生命周期实体，并对其他玩家显式关闭 transmit。
 - 根的 CP34：`x=scale`、`y=offsetX`、`z=offsetY`；CP17.x 为 alpha。运行时以每 Tick
-  更新这两个槽，完成右侧滑入、回弹、淡出和右侧滑出。
+  更新这两个槽，完成左侧滑入、回弹、淡出和右侧滑出。
 - Start 前必须完成 transmit、CP assignment 和 CP value。
 - 断线、回合开始、重复触发、卸载都必须走同一个幂等清理入口。
 - 资源变化后必须重启客户端和服务器；DLL 热重载不会刷新客户端粒子缓存。

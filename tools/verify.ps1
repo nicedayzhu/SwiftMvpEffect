@@ -73,10 +73,11 @@ $vpcf = Get-Content -Raw -LiteralPath $vpcfPath
 $checks = [ordered]@{
     "VTEX references the 60-frame MKS" =
         $vtex.Contains("materials/swift_mvp_effect/mvp_animation_60f.mks")
-    "VTEX preserves alpha" =
-        $vtex.Contains('"m_outputFormat" "string" "DXT5"')
-    "VTEX supports the 4096 atlas" =
-        $vtex.Contains('"m_nOutputMaxDimension" "int" "4096"')
+    "VTEX preserves alpha without block compression" =
+        $vtex.Contains('"m_outputFormat" "string" "RGBA8888"')
+    "VTEX forces a 4096 atlas" =
+        ($vtex.Contains('"m_nOutputMinDimension" "int" "4096"') -and
+        $vtex.Contains('"m_nOutputMaxDimension" "int" "4096"'))
     "VTEX disables LOD" =
         $vtex.Contains('"m_bNoLod" "bool" "1"')
     "VPCF has overlay renderer" =
