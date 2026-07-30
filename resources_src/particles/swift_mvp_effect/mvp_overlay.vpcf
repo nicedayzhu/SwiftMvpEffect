@@ -4,7 +4,7 @@
 	m_nBehaviorVersion = 12
 	m_nMaxParticles = 1
 	m_bInfiniteBounds = true
-	m_flDepthSortBias = {{DEPTH_SORT_BIAS}}
+	m_flDepthSortBias = 0.000000
 	m_PreEmissionOperators =
 	[
 		{
@@ -45,7 +45,7 @@
 			m_InputValue =
 			{
 				m_nType = "PF_TYPE_LITERAL"
-				m_flLiteralValue = 0.640000
+				m_flLiteralValue = 2.400000
 			}
 			m_nOutputField = 1
 		},
@@ -67,7 +67,7 @@
 			m_vecTexturesInput =
 			[
 				{
-					m_hTexture = resource:"materials/swift_mvp_effect/mvp_animation_stage_{{STAGE}}.vtex"
+					m_hTexture = resource:"materials/swift_mvp_effect/mvp_animation_60f.vtex"
 				},
 			]
 			m_flSelfIllumAmount =

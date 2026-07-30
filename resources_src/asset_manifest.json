@@ -7,23 +7,16 @@
   "frameCount": 60,
   "framesPerSecond": 25,
   "durationSeconds": 2.4,
-  "stageCount": 4,
-  "framesPerStage": 15,
-  "stageIntervalSeconds": 0.6,
-  "stageLifetimeSeconds": 0.64,
+  "rootCount": 1,
+  "framesPerRoot": 60,
+  "rootLifetimeSeconds": 2.4,
   "carrierWidth": 512,
   "carrierHeight": 512,
   "visibleContentHeight": 205,
   "particles": [
-    "particles/swift_mvp_effect/mvp_overlay_stage_1.vpcf",
-    "particles/swift_mvp_effect/mvp_overlay_stage_2.vpcf",
-    "particles/swift_mvp_effect/mvp_overlay_stage_3.vpcf",
-    "particles/swift_mvp_effect/mvp_overlay_stage_4.vpcf"
+    "particles/swift_mvp_effect/mvp_overlay.vpcf"
   ],
   "textures": [
-    "materials/swift_mvp_effect/mvp_animation_stage_1.vtex",
-    "materials/swift_mvp_effect/mvp_animation_stage_2.vtex",
-    "materials/swift_mvp_effect/mvp_animation_stage_3.vtex",
-    "materials/swift_mvp_effect/mvp_animation_stage_4.vtex"
+    "materials/swift_mvp_effect/mvp_animation_60f.vtex"
   ]
 }

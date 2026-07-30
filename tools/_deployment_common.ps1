@@ -42,16 +42,10 @@ function Assert-SafeChildPath {
 }
 
 function Get-MvpExpectedVpkEntries {
-    $entries = [System.Collections.Generic.List[string]]::new()
-    for ($stage = 1; $stage -le 4; $stage++) {
-        $entries.Add(
-            "materials/swift_mvp_effect/mvp_animation_stage_$stage.vtex_c")
-    }
-    for ($stage = 1; $stage -le 4; $stage++) {
-        $entries.Add(
-            "particles/swift_mvp_effect/mvp_overlay_stage_$stage.vpcf_c")
-    }
-    return [string[]]$entries
+    return [string[]]@(
+        "materials/swift_mvp_effect/mvp_animation_60f.vtex_c",
+        "particles/swift_mvp_effect/mvp_overlay.vpcf_c"
+    )
 }
 
 function Get-RelativeFileList {
@@ -88,7 +82,7 @@ function Assert-DirectoryMatchesEntries {
         $details = $difference |
             ForEach-Object { "$($_.SideIndicator) $($_.InputObject)" }
         throw (
-            "$Description does not match the eight-file MVP contract:`n" +
+            "$Description does not match the MVP asset contract:`n" +
             ($details -join [System.Environment]::NewLine))
     }
 }

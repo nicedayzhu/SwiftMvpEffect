@@ -184,60 +184,41 @@ finally {
     $archive.Dispose()
 }
 
-$vtexTemplate = Get-Content -Raw -LiteralPath (
-    Join-Path $templateDir "mvp_animation_stage.vtex.tmpl")
-$vpcfTemplate = Get-Content -Raw -LiteralPath (
-    Join-Path $templateDir "mvp_overlay.vpcf.tmpl")
-$stageDepthBiases = @(
-    "0.000000",
-    "-1.000000",
-    "-2.000000",
-    "-3.000000"
-)
-for ($stage = 1; $stage -le 4; $stage++) {
-    $firstFrame = (($stage - 1) * 15) + 1
-    $lastFrame = $stage * 15
-    $mksLines = [System.Collections.Generic.List[string]]::new()
-    $mksLines.Add("sequence 0")
-    $mksLines.Add("")
-    for ($frame = $firstFrame; $frame -le $lastFrame; $frame++) {
-        $durationWeight = if ($frame -eq $lastFrame) { 2 } else { 1 }
-        $mksLines.Add(
-            ("frame mvp_frame_{0:D3}.png {1}" -f $frame, $durationWeight))
-    }
-    $mksLines.Add("")
-    Save-TextIfChanged `
-        -Text ($mksLines -join "`n") `
-        -Path (Join-Path $materialDir (
-            "mvp_animation_stage_{0}.mks" -f $stage))
-
-    $stageVtex = $vtexTemplate.Replace(
-        "{{STAGE}}",
-        [string]$stage,
-        [System.StringComparison]::Ordinal)
-    $stageVpcf = $vpcfTemplate.Replace(
-        "{{STAGE}}",
-        [string]$stage,
-        [System.StringComparison]::Ordinal)
-    $stageVpcf = $stageVpcf.Replace(
-        "{{DEPTH_SORT_BIAS}}",
-        $stageDepthBiases[$stage - 1],
-        [System.StringComparison]::Ordinal)
-
-    Save-TextIfChanged `
-        -Text $stageVtex `
-        -Path (Join-Path $materialDir (
-            "mvp_animation_stage_{0}.vtex" -f $stage))
-    Save-TextIfChanged `
-        -Text $stageVpcf `
-        -Path (Join-Path $particleDir (
-            "mvp_overlay_stage_{0}.vpcf" -f $stage))
+$mksLines = [System.Collections.Generic.List[string]]::new()
+$mksLines.Add("sequence 0")
+$mksLines.Add("")
+for ($frame = 1; $frame -le 60; $frame++) {
+    $mksLines.Add(("frame mvp_frame_{0:D3}.png 1" -f $frame))
 }
+$mksLines.Add("")
+Save-TextIfChanged `
+    -Text ($mksLines -join "`n") `
+    -Path (Join-Path $materialDir "mvp_animation_60f.mks")
+
+$vtexTemplate = Get-Content -Raw -LiteralPath (
+    Join-Path $templateDir "mvp_animation_60f.vtex.tmpl")
+$vpcfTemplate = Get-Content -Raw -LiteralPath (
+    Join-Path $templateDir "mvp_overlay_60f.vpcf.tmpl")
+Save-TextIfChanged `
+    -Text $vtexTemplate `
+    -Path (Join-Path $materialDir "mvp_animation_60f.vtex")
+Save-TextIfChanged `
+    -Text $vpcfTemplate `
+    -Path (Join-Path $particleDir "mvp_overlay.vpcf")
 
 foreach ($obsolete in @(
-        (Join-Path $materialDir "mvp_animation_60f.mks"),
-        (Join-Path $materialDir "mvp_animation_60f.vtex"),
-        (Join-Path $particleDir "mvp_overlay.vpcf"))) {
+        (Join-Path $materialDir "mvp_animation_stage_1.mks"),
+        (Join-Path $materialDir "mvp_animation_stage_2.mks"),
+        (Join-Path $materialDir "mvp_animation_stage_3.mks"),
+        (Join-Path $materialDir "mvp_animation_stage_4.mks"),
+        (Join-Path $materialDir "mvp_animation_stage_1.vtex"),
+        (Join-Path $materialDir "mvp_animation_stage_2.vtex"),
+        (Join-Path $materialDir "mvp_animation_stage_3.vtex"),
+        (Join-Path $materialDir "mvp_animation_stage_4.vtex"),
+        (Join-Path $particleDir "mvp_overlay_stage_1.vpcf"),
+        (Join-Path $particleDir "mvp_overlay_stage_2.vpcf"),
+        (Join-Path $particleDir "mvp_overlay_stage_3.vpcf"),
+        (Join-Path $particleDir "mvp_overlay_stage_4.vpcf"))) {
     if (Test-Path -LiteralPath $obsolete) {
         Remove-Item -LiteralPath $obsolete -Force
     }
@@ -252,28 +233,19 @@ $manifest = [ordered]@{
     frameCount = 60
     framesPerSecond = 25
     durationSeconds = 2.4
-    stageCount = 4
-    framesPerStage = 15
-    stageIntervalSeconds = 0.6
-    stageLifetimeSeconds = 0.64
+    rootCount = 1
+    framesPerRoot = 60
+    rootLifetimeSeconds = 2.4
     carrierWidth = $CanvasSize
     carrierHeight = $CanvasSize
     visibleContentHeight = [int][Math]::Round(
         $CanvasSize * ($sourceHeight / [double]$sourceWidth))
-    particles = @(
-        1..4 | ForEach-Object {
-            "particles/swift_mvp_effect/mvp_overlay_stage_$_.vpcf"
-        }
-    )
-    textures = @(
-        1..4 | ForEach-Object {
-            "materials/swift_mvp_effect/mvp_animation_stage_$_.vtex"
-        }
-    )
+    particles = @("particles/swift_mvp_effect/mvp_overlay.vpcf")
+    textures = @("materials/swift_mvp_effect/mvp_animation_60f.vtex")
 }
 Save-TextIfChanged `
     -Text (($manifest | ConvertTo-Json -Depth 4) + "`n") `
     -Path (Join-Path $projectRoot "resources_src\asset_manifest.json")
 
 Write-Host (
-    "Generated 60 MVP carrier frames (${CanvasSize}x${CanvasSize}) and four 15-frame Source 2 stages.")
+    "Generated 60 MVP carrier frames (${CanvasSize}x${CanvasSize}) and one 60-frame Source 2 root.")

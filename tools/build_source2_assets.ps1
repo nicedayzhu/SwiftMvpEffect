@@ -49,31 +49,43 @@ if (!(Test-Path -LiteralPath $resourceCompiler -PathType Leaf)) {
 New-Item -ItemType Directory -Force -Path $contentMaterialDir | Out-Null
 New-Item -ItemType Directory -Force -Path $contentParticleDir | Out-Null
 foreach ($obsolete in @(
-        (Join-Path $contentMaterialDir "mvp_animation_60f.mks"),
-        (Join-Path $contentMaterialDir "mvp_animation_60f.vtex"),
-        (Join-Path $contentParticleDir "mvp_overlay.vpcf"),
-        (Join-Path $gameMaterialDir "mvp_animation_60f.vtex_c"),
-        (Join-Path $gameParticleDir "mvp_overlay.vpcf_c"))) {
+        (Join-Path $contentMaterialDir "mvp_animation_stage_1.mks"),
+        (Join-Path $contentMaterialDir "mvp_animation_stage_2.mks"),
+        (Join-Path $contentMaterialDir "mvp_animation_stage_3.mks"),
+        (Join-Path $contentMaterialDir "mvp_animation_stage_4.mks"),
+        (Join-Path $contentMaterialDir "mvp_animation_stage_1.vtex"),
+        (Join-Path $contentMaterialDir "mvp_animation_stage_2.vtex"),
+        (Join-Path $contentMaterialDir "mvp_animation_stage_3.vtex"),
+        (Join-Path $contentMaterialDir "mvp_animation_stage_4.vtex"),
+        (Join-Path $contentParticleDir "mvp_overlay_stage_1.vpcf"),
+        (Join-Path $contentParticleDir "mvp_overlay_stage_2.vpcf"),
+        (Join-Path $contentParticleDir "mvp_overlay_stage_3.vpcf"),
+        (Join-Path $contentParticleDir "mvp_overlay_stage_4.vpcf"),
+        (Join-Path $gameMaterialDir "mvp_animation_stage_1.vtex_c"),
+        (Join-Path $gameMaterialDir "mvp_animation_stage_2.vtex_c"),
+        (Join-Path $gameMaterialDir "mvp_animation_stage_3.vtex_c"),
+        (Join-Path $gameMaterialDir "mvp_animation_stage_4.vtex_c"),
+        (Join-Path $gameParticleDir "mvp_overlay_stage_1.vpcf_c"),
+        (Join-Path $gameParticleDir "mvp_overlay_stage_2.vpcf_c"),
+        (Join-Path $gameParticleDir "mvp_overlay_stage_3.vpcf_c"),
+        (Join-Path $gameParticleDir "mvp_overlay_stage_4.vpcf_c"))) {
     if (Test-Path -LiteralPath $obsolete) {
         Remove-Item -LiteralPath $obsolete -Force
     }
 }
-Copy-Item -Path (Join-Path $sourceMaterialDir "mvp_animation_stage_*.mks") `
+Copy-Item -LiteralPath (Join-Path $sourceMaterialDir "mvp_animation_60f.mks") `
     -Destination $contentMaterialDir -Force
-Copy-Item -Path (Join-Path $sourceMaterialDir "mvp_animation_stage_*.vtex") `
+Copy-Item -LiteralPath (Join-Path $sourceMaterialDir "mvp_animation_60f.vtex") `
     -Destination $contentMaterialDir -Force
-Copy-Item -Path (Join-Path $sourceParticleDir "mvp_overlay_stage_*.vpcf") `
+Copy-Item -LiteralPath (Join-Path $sourceParticleDir "mvp_overlay.vpcf") `
     -Destination $contentParticleDir -Force
 Copy-Item -Path (Join-Path $sourceMaterialDir "mvp_frame_*.png") `
     -Destination $contentMaterialDir -Force
 
-$inputs = @()
-for ($stage = 1; $stage -le 4; $stage++) {
-    $inputs += Join-Path $contentMaterialDir (
-        "mvp_animation_stage_{0}.vtex" -f $stage)
-    $inputs += Join-Path $contentParticleDir (
-        "mvp_overlay_stage_{0}.vpcf" -f $stage)
-}
+$inputs = @(
+    (Join-Path $contentMaterialDir "mvp_animation_60f.vtex"),
+    (Join-Path $contentParticleDir "mvp_overlay.vpcf")
+)
 $buildDir = Join-Path $projectRoot "build"
 New-Item -ItemType Directory -Force -Path $buildDir | Out-Null
 $fileList = Join-Path $buildDir "source2_compile_inputs.txt"
@@ -96,13 +108,10 @@ if ($LASTEXITCODE -ne 0) {
     throw "resourcecompiler failed with exit code $LASTEXITCODE."
 }
 
-$compiledOutputs = @()
-for ($stage = 1; $stage -le 4; $stage++) {
-    $compiledOutputs += Join-Path $gameMaterialDir (
-        "mvp_animation_stage_{0}.vtex_c" -f $stage)
-    $compiledOutputs += Join-Path $gameParticleDir (
-        "mvp_overlay_stage_{0}.vpcf_c" -f $stage)
-}
+$compiledOutputs = @(
+    (Join-Path $gameMaterialDir "mvp_animation_60f.vtex_c"),
+    (Join-Path $gameParticleDir "mvp_overlay.vpcf_c")
+)
 foreach ($required in $compiledOutputs) {
     if (!(Test-Path -LiteralPath $required -PathType Leaf)) {
         throw "Compiled Source 2 output is missing: $required"

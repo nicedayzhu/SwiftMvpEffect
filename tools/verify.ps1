@@ -49,80 +49,63 @@ if ($frames.Count -ne 60) {
     throw "Expected 60 generated frame PNGs, found $($frames.Count)."
 }
 
-$depthBiases = @("0.000000", "-1.000000", "-2.000000", "-3.000000")
-$allMksFrameNames = [System.Collections.Generic.List[string]]::new()
-for ($stage = 1; $stage -le 4; $stage++) {
-    $mksPath = Join-Path $materialDir (
-        "mvp_animation_stage_{0}.mks" -f $stage)
-    $vtexPath = Join-Path $materialDir (
-        "mvp_animation_stage_{0}.vtex" -f $stage)
-    $vpcfPath = Join-Path $particleDir (
-        "mvp_overlay_stage_{0}.vpcf" -f $stage)
-    foreach ($required in @($mksPath, $vtexPath, $vpcfPath)) {
-        if (!(Test-Path -LiteralPath $required -PathType Leaf)) {
-            throw "Missing stage resource: $required"
-        }
-    }
-
-    $mks = Get-Content -Raw -LiteralPath $mksPath
-    $mksMatches = [regex]::Matches(
-        $mks,
-        '(?m)^frame (mvp_frame_[0-9]{3}\.png) ([12])$')
-    if ($mksMatches.Count -ne 15) {
-        throw "Stage $stage MKS must contain exactly 15 frame lines."
-    }
-    foreach ($match in $mksMatches) {
-        $allMksFrameNames.Add($match.Groups[1].Value)
-    }
-    if ($mksMatches[14].Groups[2].Value -ne "2") {
-        throw "Stage $stage must hold its final frame for one overlap tick."
-    }
-
-    $vtex = Get-Content -Raw -LiteralPath $vtexPath
-    $vpcf = Get-Content -Raw -LiteralPath $vpcfPath
-    $checks = [ordered]@{
-        "Stage $stage VTEX references its MKS" =
-            $vtex.Contains(
-                "materials/swift_mvp_effect/mvp_animation_stage_$stage.mks")
-        "Stage $stage VTEX preserves alpha" =
-            $vtex.Contains('"m_outputFormat" "string" "DXT5"')
-        "Stage $stage VTEX disables LOD" =
-            $vtex.Contains('"m_bNoLod" "bool" "1"')
-        "Stage $stage VPCF has overlay renderer" =
-            $vpcf.Contains("m_bOnlyRenderInEffecsGameOverlay = true")
-        "Stage $stage VPCF disables Z buffer" =
-            $vpcf.Contains("m_bDisableZBuffering = true")
-        "Stage $stage VPCF depth sort is explicit" =
-            $vpcf.Contains(
-                "m_flDepthSortBias = $($depthBiases[$stage - 1])")
-        "Stage $stage VPCF fits animation to lifetime" =
-            $vpcf.Contains(
-                'm_nAnimationType = "ANIMATION_TYPE_FIT_LIFETIME"')
-        "Stage $stage VPCF explicitly plays at 25 FPS" =
-            $vpcf.Contains("m_flAnimationRate = 25.000000")
-        "Stage $stage VPCF lifetime is 0.64 seconds" =
-            $vpcf.Contains("m_flLiteralValue = 0.640000")
-        "Stage $stage VPCF uses CP34 only" =
-            ([regex]::Matches($vpcf, "m_nControlPoint = 34").Count -eq 3)
-        "Stage $stage has no unresolved template token" =
-            ![regex]::IsMatch(
-                $vpcf + $vtex,
-                '\{\{[A-Z0-9_]+\}\}')
-    }
-    foreach ($entry in $checks.GetEnumerator()) {
-        if (!$entry.Value) {
-            throw "Verification failed: $($entry.Key)"
-        }
+$mksPath = Join-Path $materialDir "mvp_animation_60f.mks"
+$vtexPath = Join-Path $materialDir "mvp_animation_60f.vtex"
+$vpcfPath = Join-Path $particleDir "mvp_overlay.vpcf"
+foreach ($required in @($mksPath, $vtexPath, $vpcfPath)) {
+    if (!(Test-Path -LiteralPath $required -PathType Leaf)) {
+        throw "Missing 60-frame animation resource: $required"
     }
 }
-if (($allMksFrameNames | Sort-Object -Unique).Count -ne 60) {
-    throw "The four staged MKS files must reference all 60 frames exactly once."
+
+$mks = Get-Content -Raw -LiteralPath $mksPath
+$mksMatches = [regex]::Matches(
+    $mks,
+    '(?m)^frame (mvp_frame_[0-9]{3}\.png) 1$')
+$mksFrameNames = @($mksMatches | ForEach-Object { $_.Groups[1].Value })
+if ($mksMatches.Count -ne 60 -or
+    @($mksFrameNames | Sort-Object -Unique).Count -ne 60) {
+    throw "The single MKS must reference all 60 frames exactly once."
+}
+
+$vtex = Get-Content -Raw -LiteralPath $vtexPath
+$vpcf = Get-Content -Raw -LiteralPath $vpcfPath
+$checks = [ordered]@{
+    "VTEX references the 60-frame MKS" =
+        $vtex.Contains("materials/swift_mvp_effect/mvp_animation_60f.mks")
+    "VTEX preserves alpha" =
+        $vtex.Contains('"m_outputFormat" "string" "DXT5"')
+    "VTEX supports the 4096 atlas" =
+        $vtex.Contains('"m_nOutputMaxDimension" "int" "4096"')
+    "VTEX disables LOD" =
+        $vtex.Contains('"m_bNoLod" "bool" "1"')
+    "VPCF has overlay renderer" =
+        $vpcf.Contains("m_bOnlyRenderInEffecsGameOverlay = true")
+    "VPCF disables Z buffer" =
+        $vpcf.Contains("m_bDisableZBuffering = true")
+    "VPCF has explicit depth sort" =
+        $vpcf.Contains("m_flDepthSortBias = 0.000000")
+    "VPCF fits animation to lifetime" =
+        $vpcf.Contains('m_nAnimationType = "ANIMATION_TYPE_FIT_LIFETIME"')
+    "VPCF explicitly plays at 25 FPS" =
+        $vpcf.Contains("m_flAnimationRate = 25.000000")
+    "VPCF lifetime is 2.4 seconds" =
+        $vpcf.Contains("m_flLiteralValue = 2.400000")
+    "VPCF uses CP34 only" =
+        ([regex]::Matches($vpcf, "m_nControlPoint = 34").Count -eq 3)
+    "VPCF has no unresolved template token" =
+        ![regex]::IsMatch($vpcf + $vtex, '\{\{[A-Z0-9_]+\}\}')
+}
+foreach ($entry in $checks.GetEnumerator()) {
+    if (!$entry.Value) {
+        throw "Verification failed: $($entry.Key)"
+    }
 }
 
 $auditScript = Join-Path $PSScriptRoot "audit_overlay_vpcf.py"
 if (Test-Path -LiteralPath $auditScript -PathType Leaf) {
     python $auditScript $particleDir `
-        --root-pattern "mvp_overlay_stage_*.vpcf" `
+        --root-pattern "mvp_overlay.vpcf" `
         --strict
     if ($LASTEXITCODE -ne 0) {
         throw "Overlay VPCF audit failed with exit code $LASTEXITCODE."

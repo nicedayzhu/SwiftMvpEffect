@@ -93,7 +93,7 @@ try {
         -ExpectedEntries $expectedEntries `
         -Description "VPK staging directory"
 
-    Write-Host "Packing the eight compiled MVP resources..."
+    Write-Host "Packing the compiled MVP resources..."
     & $VpkEditCli `
         --no-progress `
         --version 2 `

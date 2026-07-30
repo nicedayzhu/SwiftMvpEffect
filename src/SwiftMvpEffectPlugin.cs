@@ -25,18 +25,11 @@ namespace SwiftMvpEffect;
 public sealed class SwiftMvpEffectPlugin(ISwiftlyCore core) : BasePlugin(core)
 {
     private const string ConfigFileName = "mvp_effect.json";
-    private const int AnimationStageCount = 4;
-    private const float StageIntervalSeconds = 0.6f;
     private const float AnimationSeconds = 2.4f;
     private const float EntityStopGraceSeconds = 0.35f;
 
-    private static readonly string[] EffectParticles =
-    [
-        "particles/swift_mvp_effect/mvp_overlay_stage_1.vpcf",
-        "particles/swift_mvp_effect/mvp_overlay_stage_2.vpcf",
-        "particles/swift_mvp_effect/mvp_overlay_stage_3.vpcf",
-        "particles/swift_mvp_effect/mvp_overlay_stage_4.vpcf"
-    ];
+    private const string EffectParticle =
+        "particles/swift_mvp_effect/mvp_overlay.vpcf";
 
     private readonly Dictionary<int, MvpEffectSession> activeEffects = [];
     private readonly HashSet<CHandle<CParticleSystem>> pendingRemovals = [];
@@ -73,12 +66,10 @@ public sealed class SwiftMvpEffectPlugin(ISwiftlyCore core) : BasePlugin(core)
 
     private void OnPrecacheResource(IOnPrecacheResourceEvent @event)
     {
-        foreach (var particle in EffectParticles)
-            @event.AddItem(particle);
+        @event.AddItem(EffectParticle);
 
         Logger.LogInformation(
-            "SwiftMvpEffect precached {Count} staged particle resources.",
-            EffectParticles.Length);
+            "SwiftMvpEffect precached one 60-frame particle resource.");
     }
 
     private void OnClientDisconnected(IOnClientDisconnectedEvent @event)
@@ -184,27 +175,17 @@ public sealed class SwiftMvpEffectPlugin(ISwiftlyCore core) : BasePlugin(core)
 
         CloseEffect(slot, $"replace:{reason}");
 
-        var handles = new List<CHandle<CParticleSystem>>(AnimationStageCount);
+        var handles = new List<CHandle<CParticleSystem>>(1);
         CParticleSystem? pendingParticle = null;
         try
         {
-            foreach (var effectName in EffectParticles)
-            {
-                pendingParticle = CreateConfiguredParticle(slot, effectName);
-                handles.Add(Core.EntitySystem.GetRefEHandle(pendingParticle));
-                pendingParticle = null;
-            }
+            pendingParticle = CreateConfiguredParticle(slot, EffectParticle);
+            handles.Add(Core.EntitySystem.GetRefEHandle(pendingParticle));
+            pendingParticle = null;
 
             var session = new MvpEffectSession(slot, [.. handles]);
             activeEffects[slot] = session;
-            StartStage(session, 0, reason);
-            for (var stage = 1; stage < AnimationStageCount; stage++)
-            {
-                var scheduledStage = stage;
-                Core.Scheduler.DelayBySeconds(
-                    scheduledStage * StageIntervalSeconds,
-                    () => StartStage(session, scheduledStage, reason));
-            }
+            StartAnimation(session, reason);
             ScheduleNaturalRemoval(session, reason);
 
             Logger.LogInformation(
@@ -274,7 +255,7 @@ public sealed class SwiftMvpEffectPlugin(ISwiftlyCore core) : BasePlugin(core)
                         player.Slot);
             }
 
-            // One network slot is enough for every stage:
+            // One network slot is enough for the full animation:
             // CP34.x = scale, CP34.y = horizontal offset, CP34.z = vertical offset.
             particle.ServerControlPointAssignments[0] = 34;
             particle.ServerControlPoints[0] = new Vector(
@@ -287,25 +268,23 @@ public sealed class SwiftMvpEffectPlugin(ISwiftlyCore core) : BasePlugin(core)
         }
         catch
         {
-            DespawnImmediately(particle, "stage-spawn-error");
+            DespawnImmediately(particle, "animation-spawn-error");
             throw;
         }
     }
 
-    private void StartStage(
+    private void StartAnimation(
         MvpEffectSession session,
-        int stage,
         string reason)
     {
         if (!activeEffects.TryGetValue(session.Slot, out var current) ||
             !ReferenceEquals(current, session) ||
-            stage < 0 ||
-            stage >= session.Particles.Length)
+            session.Particles.Length != 1)
         {
             return;
         }
 
-        var handle = session.Particles[stage];
+        var handle = session.Particles[0];
         if (!handle.IsValid || handle.Value?.IsValidEntity != true)
             return;
 
@@ -315,9 +294,8 @@ public sealed class SwiftMvpEffectPlugin(ISwiftlyCore core) : BasePlugin(core)
         particle.ActiveUpdated();
 
         Logger.LogDebug(
-            "MVP_EFFECT_STAGE slot={Slot} stage={Stage} entity={EntityIndex} reason={Reason}.",
+            "MVP_EFFECT_START slot={Slot} entity={EntityIndex} reason={Reason}.",
             session.Slot,
-            stage + 1,
             particle.Index,
             reason);
     }
