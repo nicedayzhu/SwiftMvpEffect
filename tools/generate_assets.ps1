@@ -157,6 +157,252 @@ $vtexTemplate = Get-Content -Raw -LiteralPath (
     Join-Path $templateDir "mvp_emblem.vtex.tmpl")
 $vpcfTemplate = Get-Content -Raw -LiteralPath (
     Join-Path $templateDir "mvp_overlay.vpcf.tmpl")
+
+$motionSegments = @(
+    [pscustomobject]@{
+        Name = "enter-fast"
+        Start = 0.000
+        End = 0.094
+        OffsetFrom = -1.120
+        OffsetTo = -0.441
+        ScaleFrom = 0.720
+        ScaleTo = 0.890
+    },
+    [pscustomobject]@{
+        Name = "enter-ease"
+        Start = 0.094
+        End = 0.187
+        OffsetFrom = -0.441
+        OffsetTo = -0.067
+        ScaleFrom = 0.890
+        ScaleTo = 0.983
+    },
+    [pscustomobject]@{
+        Name = "enter-overshoot"
+        Start = 0.187
+        End = 0.286
+        OffsetFrom = -0.067
+        OffsetTo = 0.067
+        ScaleFrom = 0.983
+        ScaleTo = 1.017
+    },
+    [pscustomobject]@{
+        Name = "enter-overshoot-peak"
+        Start = 0.286
+        End = 0.321
+        OffsetFrom = 0.067
+        OffsetTo = 0.074
+        ScaleFrom = 1.017
+        ScaleTo = 1.019
+    },
+    [pscustomobject]@{
+        Name = "enter-rebound"
+        Start = 0.321
+        End = 0.406
+        OffsetFrom = 0.074
+        OffsetTo = 0.045
+        ScaleFrom = 1.019
+        ScaleTo = 1.011
+    },
+    [pscustomobject]@{
+        Name = "enter-settle"
+        Start = 0.406
+        End = 0.520
+        OffsetFrom = 0.045
+        OffsetTo = 0.000
+        ScaleFrom = 1.011
+        ScaleTo = 1.000
+    },
+    [pscustomobject]@{
+        Name = "center-hold"
+        Start = 0.520
+        End = 1.620
+        OffsetFrom = 0.000
+        OffsetTo = 0.000
+        ScaleFrom = 1.000
+        ScaleTo = 1.000
+    },
+    [pscustomobject]@{
+        Name = "exit-start"
+        Start = 1.620
+        End = 1.744
+        OffsetFrom = 0.000
+        OffsetTo = 0.009
+        ScaleFrom = 1.000
+        ScaleTo = 0.999
+    },
+    [pscustomobject]@{
+        Name = "exit-accelerate-1"
+        Start = 1.744
+        End = 1.868
+        OffsetFrom = 0.009
+        OffsetTo = 0.072
+        ScaleFrom = 0.999
+        ScaleTo = 0.991
+    },
+    [pscustomobject]@{
+        Name = "exit-accelerate-2"
+        Start = 1.868
+        End = 1.992
+        OffsetFrom = 0.072
+        OffsetTo = 0.242
+        ScaleFrom = 0.991
+        ScaleTo = 0.970
+    },
+    [pscustomobject]@{
+        Name = "exit-fast-1"
+        Start = 1.992
+        End = 2.116
+        OffsetFrom = 0.242
+        OffsetTo = 0.573
+        ScaleFrom = 0.970
+        ScaleTo = 0.928
+    },
+    [pscustomobject]@{
+        Name = "exit-fast-2"
+        Start = 2.116
+        End = 2.240
+        OffsetFrom = 0.573
+        OffsetTo = 1.120
+        ScaleFrom = 0.928
+        ScaleTo = 0.860
+    },
+    [pscustomobject]@{
+        Name = "offscreen-fade-tail"
+        Start = 2.240
+        End = 2.400
+        OffsetFrom = 1.120
+        OffsetTo = 1.120
+        ScaleFrom = 0.860
+        ScaleTo = 0.860
+    }
+)
+
+for ($index = 0; $index -lt $motionSegments.Count; $index++) {
+    $segment = $motionSegments[$index]
+    if ($segment.End -le $segment.Start) {
+        throw "Motion segment '$($segment.Name)' must have a positive duration."
+    }
+    if ($index -gt 0) {
+        $previous = $motionSegments[$index - 1]
+        if ([Math]::Abs($previous.End - $segment.Start) -gt 0.000001) {
+            throw "Motion segments '$($previous.Name)' and '$($segment.Name)' are not contiguous."
+        }
+        if ([Math]::Abs($previous.OffsetTo - $segment.OffsetFrom) -gt 0.000001) {
+            throw "Motion offsets are discontinuous at '$($segment.Name)'."
+        }
+        if ([Math]::Abs($previous.ScaleTo - $segment.ScaleFrom) -gt 0.000001) {
+            throw "Motion scales are discontinuous at '$($segment.Name)'."
+        }
+    }
+}
+if ([Math]::Abs($motionSegments[0].Start) -gt 0.000001 -or
+    [Math]::Abs($motionSegments[-1].End - 2.400) -gt 0.000001) {
+    throw "Motion segments must cover the complete 2.4 second VPCF lifetime."
+}
+
+$invariant = [System.Globalization.CultureInfo]::InvariantCulture
+$motionRendererBlocks = @()
+for ($index = 0; $index -lt $motionSegments.Count; $index++) {
+    $segment = $motionSegments[$index]
+    $gateEnd = if ($index -lt $motionSegments.Count - 1) {
+        $segment.End - 0.0001
+    }
+    else {
+        $segment.End
+    }
+    $startText = $segment.Start.ToString("0.000000", $invariant)
+    $endText = $segment.End.ToString("0.000000", $invariant)
+    $gateEndText = $gateEnd.ToString("0.000000", $invariant)
+    $offsetFromText = $segment.OffsetFrom.ToString("0.000000", $invariant)
+    $offsetToText = $segment.OffsetTo.ToString("0.000000", $invariant)
+    $scaleFromText = $segment.ScaleFrom.ToString("0.000000", $invariant)
+    $scaleToText = $segment.ScaleTo.ToString("0.000000", $invariant)
+    $motionRendererBlocks += @"
+		{
+			_class = "C_OP_RenderSprites"
+			m_vecTexturesInput =
+			[
+				{
+					m_hTexture = resource:"materials/swift_mvp_effect/mvp_emblem.vtex"
+				},
+			]
+			m_flSelfIllumAmount =
+			{
+				m_nType = "PF_TYPE_LITERAL"
+				m_flLiteralValue = 1.000000
+			}
+			m_flAlphaScale =
+			{
+				m_nType = "PF_TYPE_COLLECTION_AGE"
+				m_nMapType = "PF_MAP_TYPE_NOTCHED"
+				m_flNotchedRangeMin = $startText
+				m_flNotchedRangeMax = $gateEndText
+				m_flNotchedOutputOutside = 0.000000
+				m_flNotchedOutputInside = 1.000000
+			}
+			m_flRadiusScale =
+			{
+				m_nType = "PF_TYPE_COLLECTION_AGE"
+				m_nMapType = "PF_MAP_TYPE_REMAP"
+				m_nInputMode = "PF_INPUT_MODE_CLAMPED"
+				m_flInput0 = $startText
+				m_flInput1 = $endText
+				m_flOutput0 = $scaleFromText
+				m_flOutput1 = $scaleToText
+			}
+			m_bOnlyRenderInEffecsGameOverlay = true
+			m_flMinSize =
+			{
+				m_nType = "PF_TYPE_CONTROL_POINT_COMPONENT"
+				m_nControlPoint = 34
+				m_nVectorComponent = 0
+			}
+			m_flMaxSize =
+			{
+				m_nType = "PF_TYPE_CONTROL_POINT_COMPONENT"
+				m_nControlPoint = 34
+				m_nVectorComponent = 0
+			}
+			m_nFogType = "PARTICLE_FOG_DISABLED"
+			m_bDisableZBuffering = true
+			m_nAnimationType = "ANIMATION_TYPE_MANUAL_FRAMES"
+			m_flCenterXOffset =
+			{
+				m_nType = "PF_TYPE_COLLECTION_AGE"
+				m_nMapType = "PF_MAP_TYPE_REMAP"
+				m_nInputMode = "PF_INPUT_MODE_CLAMPED"
+				m_flInput0 = $startText
+				m_flInput1 = $endText
+				m_flOutput0 = $offsetFromText
+				m_flOutput1 = $offsetToText
+			}
+			m_flCenterYOffset =
+			{
+				m_nType = "PF_TYPE_CONTROL_POINT_COMPONENT"
+				m_nMapType = "PF_MAP_TYPE_REMAP"
+				m_nControlPoint = 34
+				m_nVectorComponent = 2
+				m_flInput0 = -1.000000
+				m_flInput1 = 1.000000
+				m_flOutput0 = -1.000000
+				m_flOutput1 = 1.000000
+			}
+			m_flDepthBias =
+			{
+				m_nType = "PF_TYPE_LITERAL"
+				m_flLiteralValue = 0.000000
+			}
+		},
+"@
+}
+$vpcfTemplate = $vpcfTemplate.Replace(
+    "{{MOTION_RENDERERS}}",
+    $motionRendererBlocks -join "")
+if ($vpcfTemplate.Contains("{{MOTION_RENDERERS}}")) {
+    throw "Failed to expand the VPCF motion renderer template."
+}
+
 Save-TextIfChanged `
     -Text $vtexTemplate `
     -Path (Join-Path $materialDir "mvp_emblem.vtex")
@@ -199,6 +445,11 @@ $manifest = [ordered]@{
     rootCount = 1
     framesPerRoot = 1
     rootLifetimeSeconds = 2.4
+    motionClock = "PF_TYPE_COLLECTION_AGE"
+    motionSegmentCount = $motionSegments.Count
+    enterEndSeconds = 0.52
+    centerHoldEndSeconds = 1.62
+    offscreenRightSeconds = 2.24
     carrierWidth = $CanvasSize
     carrierHeight = $CanvasSize
     visibleContentHeight = [int][Math]::Round(

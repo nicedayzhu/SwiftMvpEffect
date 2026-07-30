@@ -22,12 +22,16 @@ SwiftlyS2 回合 MVP 屏幕粒子插件。运行时使用 owner-only
 
 - 素材为一张透明金色 MVP 主视觉；生成器等比放入 1024×1024 透明 carrier，产出无损
   `RGBA8888` 1024 纹理，避免黑底、MKS 降采样与大图集首帧卡顿。
-- 横向移动必须用 `PF_TYPE_PARTICLE_AGE_NORMALIZED` 在客户端本地推进；不要以服务器 Tick
-  反复复制位置/alpha。
+- 横向移动必须用 `PF_TYPE_COLLECTION_AGE` 在客户端本地推进；不要把
+  `PF_TYPE_PARTICLE_AGE_NORMALIZED` 填入 `CParticleCollectionRendererFloatInput`，
+  否则客户端会把集合级 renderer 输入退化成静态值。不要以服务器 Tick 反复复制
+  位置/alpha。
 - 单个根的 `m_flDepthSortBias` 固定为 `0`。
 - 每个观看者只创建一个短生命周期实体，并对其他玩家显式关闭 transmit。
-- 根的 CP34：`x=scale`、`z=offsetY`；Start 前只写一次。横向移动与淡入淡出完全由 VPCF
-  生命周期计算，完成左侧滑入、右侧滑出。
+- 根的 CP34：`x=scale`、`z=offsetY`；Start 前只写一次。横向位置、
+  `m_flRadiusScale` 回弹/缩放与 renderer 时间窗完全由 VPCF 的集合生命周期分段计算，
+  完成左侧滑入、回弹、中心停留、右侧滑出；粒子 alpha 由 VPCF 淡入淡出 operator
+  计算。
 - Start 前必须完成 transmit、CP assignment 和 CP value。
 - 断线、回合开始、重复触发、卸载都必须走同一个幂等清理入口。
 - 资源变化后必须重启客户端和服务器；DLL 热重载不会刷新客户端粒子缓存。

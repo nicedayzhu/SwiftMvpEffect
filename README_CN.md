@@ -2,8 +2,8 @@
 
 基于 Swift Particle Menu 已验证架构制作的 SwiftlyS2 回合 MVP 屏幕粒子插件。
 CS2 发出 `round_mvp` 事件时，插件为目标观看者创建 owner-only
-`info_particle_system`，客户端播放透明金色 MVP 主视觉。位置和淡入淡出由粒子生命周期
-在客户端本地计算，服务器只负责创建与清理实体。
+`info_particle_system`，客户端播放透明金色 MVP 主视觉。位置、缩放回弹和淡入淡出由
+VPCF 的集合生命周期在客户端本地计算，服务器只负责创建与清理实体。
 
 ![透明 MVP 主视觉](assets/generated/mvp_emblem_transparent.png)
 
@@ -14,7 +14,7 @@ CS2 发出 `round_mvp` 事件时，插件为目标观看者创建 owner-only
 - `swift_mvp_test` 单人测试命令
 - 单个透明 MVP 主视觉、VTEX、VPCF 自动生成
 - 透明源图 → 1024×1024 透明 carrier、无损 1024 纹理，显著降低首次显示开销
-- 默认 `scale=0.50`，客户端平滑地从左侧滑入并从右侧滑出
+- 默认 `scale=0.50`，客户端从左侧滑入、轻微回弹、中心停留并从右侧加速滑出
 - 每名观看者独立 transmit，其他玩家明确不可见
 - 重复触发、断线、下一回合、卸载时幂等清理
 - Source 2 资源编译与严格验证脚本
@@ -164,5 +164,8 @@ Game              csgo
 - `smb`：多实体生命周期与失败清理
 
 MVP 只在开始时写入一次 CP34（scale 与纵向偏移）。单个 VPCF 以
-`PF_TYPE_PARTICLE_AGE_NORMALIZED` 本地计算横向位置，并用 `C_OP_FadeInSimple` /
-`C_OP_FadeOutSimple` 本地淡入淡出；因此不存在服务端逐 Tick 的控制点复制，也没有黑色背景。
+`PF_TYPE_COLLECTION_AGE` 驱动 13 个连续 renderer 时间段：0–0.52 秒从左侧滑入并
+回弹，0.52–1.62 秒在中心停留，1.62–2.24 秒向右加速飞出，余下时间在屏幕外完成
+淡出。`m_flRadiusScale` 同步完成入场回弹与离场收缩，`C_OP_FadeInSimple` /
+`C_OP_FadeOutSimple` 负责粒子 alpha；因此不存在服务端逐 Tick 的控制点复制，也没有
+黑色背景。

@@ -189,7 +189,8 @@ public sealed class SwiftMvpEffectPlugin(ISwiftlyCore core) : BasePlugin(core)
 
             Logger.LogInformation(
                 "MVP_EFFECT_SPAWN slot={Slot} entities={EntityIndexes} reason={Reason} " +
-                "cp34=({Scale:F2},0,{OffsetY:F2}), motion=client-lifetime-left-in-right-out.",
+                "cp34=({Scale:F2},0,{OffsetY:F2}), " +
+                "motion=client-collection-age-left-in-bounce-hold-right-out.",
                 slot,
                 string.Join(
                     ",",
@@ -253,8 +254,9 @@ public sealed class SwiftMvpEffectPlugin(ISwiftlyCore core) : BasePlugin(core)
                         player.Slot);
             }
 
-            // CP34 is configured once before Start. The VPCF's particle-age mapping owns
-            // the horizontal flyover locally on the client, avoiding per-tick replication.
+            // CP34 is configured once before Start. The VPCF's collection-age renderer
+            // segments own position, scale bounce, hold, exit, and alpha locally on the
+            // client, avoiding per-tick replication.
             // CP34.x = scale, CP34.z = vertical offset.
             particle.ServerControlPointAssignments[0] = 34;
             particle.ServerControlPoints[0] = new Vector(

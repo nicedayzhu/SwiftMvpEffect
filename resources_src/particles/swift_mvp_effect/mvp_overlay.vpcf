@@ -83,6 +83,25 @@
 				m_nType = "PF_TYPE_LITERAL"
 				m_flLiteralValue = 1.000000
 			}
+			m_flAlphaScale =
+			{
+				m_nType = "PF_TYPE_COLLECTION_AGE"
+				m_nMapType = "PF_MAP_TYPE_NOTCHED"
+				m_flNotchedRangeMin = 0.000000
+				m_flNotchedRangeMax = 0.093900
+				m_flNotchedOutputOutside = 0.000000
+				m_flNotchedOutputInside = 1.000000
+			}
+			m_flRadiusScale =
+			{
+				m_nType = "PF_TYPE_COLLECTION_AGE"
+				m_nMapType = "PF_MAP_TYPE_REMAP"
+				m_nInputMode = "PF_INPUT_MODE_CLAMPED"
+				m_flInput0 = 0.000000
+				m_flInput1 = 0.094000
+				m_flOutput0 = 0.720000
+				m_flOutput1 = 0.890000
+			}
 			m_bOnlyRenderInEffecsGameOverlay = true
 			m_flMinSize =
 			{
@@ -101,11 +120,900 @@
 			m_nAnimationType = "ANIMATION_TYPE_MANUAL_FRAMES"
 			m_flCenterXOffset =
 			{
-				m_nType = "PF_TYPE_PARTICLE_AGE_NORMALIZED"
+				m_nType = "PF_TYPE_COLLECTION_AGE"
 				m_nMapType = "PF_MAP_TYPE_REMAP"
+				m_nInputMode = "PF_INPUT_MODE_CLAMPED"
 				m_flInput0 = 0.000000
-				m_flInput1 = 1.000000
+				m_flInput1 = 0.094000
 				m_flOutput0 = -1.120000
+				m_flOutput1 = -0.441000
+			}
+			m_flCenterYOffset =
+			{
+				m_nType = "PF_TYPE_CONTROL_POINT_COMPONENT"
+				m_nMapType = "PF_MAP_TYPE_REMAP"
+				m_nControlPoint = 34
+				m_nVectorComponent = 2
+				m_flInput0 = -1.000000
+				m_flInput1 = 1.000000
+				m_flOutput0 = -1.000000
+				m_flOutput1 = 1.000000
+			}
+			m_flDepthBias =
+			{
+				m_nType = "PF_TYPE_LITERAL"
+				m_flLiteralValue = 0.000000
+			}
+		},		{
+			_class = "C_OP_RenderSprites"
+			m_vecTexturesInput =
+			[
+				{
+					m_hTexture = resource:"materials/swift_mvp_effect/mvp_emblem.vtex"
+				},
+			]
+			m_flSelfIllumAmount =
+			{
+				m_nType = "PF_TYPE_LITERAL"
+				m_flLiteralValue = 1.000000
+			}
+			m_flAlphaScale =
+			{
+				m_nType = "PF_TYPE_COLLECTION_AGE"
+				m_nMapType = "PF_MAP_TYPE_NOTCHED"
+				m_flNotchedRangeMin = 0.094000
+				m_flNotchedRangeMax = 0.186900
+				m_flNotchedOutputOutside = 0.000000
+				m_flNotchedOutputInside = 1.000000
+			}
+			m_flRadiusScale =
+			{
+				m_nType = "PF_TYPE_COLLECTION_AGE"
+				m_nMapType = "PF_MAP_TYPE_REMAP"
+				m_nInputMode = "PF_INPUT_MODE_CLAMPED"
+				m_flInput0 = 0.094000
+				m_flInput1 = 0.187000
+				m_flOutput0 = 0.890000
+				m_flOutput1 = 0.983000
+			}
+			m_bOnlyRenderInEffecsGameOverlay = true
+			m_flMinSize =
+			{
+				m_nType = "PF_TYPE_CONTROL_POINT_COMPONENT"
+				m_nControlPoint = 34
+				m_nVectorComponent = 0
+			}
+			m_flMaxSize =
+			{
+				m_nType = "PF_TYPE_CONTROL_POINT_COMPONENT"
+				m_nControlPoint = 34
+				m_nVectorComponent = 0
+			}
+			m_nFogType = "PARTICLE_FOG_DISABLED"
+			m_bDisableZBuffering = true
+			m_nAnimationType = "ANIMATION_TYPE_MANUAL_FRAMES"
+			m_flCenterXOffset =
+			{
+				m_nType = "PF_TYPE_COLLECTION_AGE"
+				m_nMapType = "PF_MAP_TYPE_REMAP"
+				m_nInputMode = "PF_INPUT_MODE_CLAMPED"
+				m_flInput0 = 0.094000
+				m_flInput1 = 0.187000
+				m_flOutput0 = -0.441000
+				m_flOutput1 = -0.067000
+			}
+			m_flCenterYOffset =
+			{
+				m_nType = "PF_TYPE_CONTROL_POINT_COMPONENT"
+				m_nMapType = "PF_MAP_TYPE_REMAP"
+				m_nControlPoint = 34
+				m_nVectorComponent = 2
+				m_flInput0 = -1.000000
+				m_flInput1 = 1.000000
+				m_flOutput0 = -1.000000
+				m_flOutput1 = 1.000000
+			}
+			m_flDepthBias =
+			{
+				m_nType = "PF_TYPE_LITERAL"
+				m_flLiteralValue = 0.000000
+			}
+		},		{
+			_class = "C_OP_RenderSprites"
+			m_vecTexturesInput =
+			[
+				{
+					m_hTexture = resource:"materials/swift_mvp_effect/mvp_emblem.vtex"
+				},
+			]
+			m_flSelfIllumAmount =
+			{
+				m_nType = "PF_TYPE_LITERAL"
+				m_flLiteralValue = 1.000000
+			}
+			m_flAlphaScale =
+			{
+				m_nType = "PF_TYPE_COLLECTION_AGE"
+				m_nMapType = "PF_MAP_TYPE_NOTCHED"
+				m_flNotchedRangeMin = 0.187000
+				m_flNotchedRangeMax = 0.285900
+				m_flNotchedOutputOutside = 0.000000
+				m_flNotchedOutputInside = 1.000000
+			}
+			m_flRadiusScale =
+			{
+				m_nType = "PF_TYPE_COLLECTION_AGE"
+				m_nMapType = "PF_MAP_TYPE_REMAP"
+				m_nInputMode = "PF_INPUT_MODE_CLAMPED"
+				m_flInput0 = 0.187000
+				m_flInput1 = 0.286000
+				m_flOutput0 = 0.983000
+				m_flOutput1 = 1.017000
+			}
+			m_bOnlyRenderInEffecsGameOverlay = true
+			m_flMinSize =
+			{
+				m_nType = "PF_TYPE_CONTROL_POINT_COMPONENT"
+				m_nControlPoint = 34
+				m_nVectorComponent = 0
+			}
+			m_flMaxSize =
+			{
+				m_nType = "PF_TYPE_CONTROL_POINT_COMPONENT"
+				m_nControlPoint = 34
+				m_nVectorComponent = 0
+			}
+			m_nFogType = "PARTICLE_FOG_DISABLED"
+			m_bDisableZBuffering = true
+			m_nAnimationType = "ANIMATION_TYPE_MANUAL_FRAMES"
+			m_flCenterXOffset =
+			{
+				m_nType = "PF_TYPE_COLLECTION_AGE"
+				m_nMapType = "PF_MAP_TYPE_REMAP"
+				m_nInputMode = "PF_INPUT_MODE_CLAMPED"
+				m_flInput0 = 0.187000
+				m_flInput1 = 0.286000
+				m_flOutput0 = -0.067000
+				m_flOutput1 = 0.067000
+			}
+			m_flCenterYOffset =
+			{
+				m_nType = "PF_TYPE_CONTROL_POINT_COMPONENT"
+				m_nMapType = "PF_MAP_TYPE_REMAP"
+				m_nControlPoint = 34
+				m_nVectorComponent = 2
+				m_flInput0 = -1.000000
+				m_flInput1 = 1.000000
+				m_flOutput0 = -1.000000
+				m_flOutput1 = 1.000000
+			}
+			m_flDepthBias =
+			{
+				m_nType = "PF_TYPE_LITERAL"
+				m_flLiteralValue = 0.000000
+			}
+		},		{
+			_class = "C_OP_RenderSprites"
+			m_vecTexturesInput =
+			[
+				{
+					m_hTexture = resource:"materials/swift_mvp_effect/mvp_emblem.vtex"
+				},
+			]
+			m_flSelfIllumAmount =
+			{
+				m_nType = "PF_TYPE_LITERAL"
+				m_flLiteralValue = 1.000000
+			}
+			m_flAlphaScale =
+			{
+				m_nType = "PF_TYPE_COLLECTION_AGE"
+				m_nMapType = "PF_MAP_TYPE_NOTCHED"
+				m_flNotchedRangeMin = 0.286000
+				m_flNotchedRangeMax = 0.320900
+				m_flNotchedOutputOutside = 0.000000
+				m_flNotchedOutputInside = 1.000000
+			}
+			m_flRadiusScale =
+			{
+				m_nType = "PF_TYPE_COLLECTION_AGE"
+				m_nMapType = "PF_MAP_TYPE_REMAP"
+				m_nInputMode = "PF_INPUT_MODE_CLAMPED"
+				m_flInput0 = 0.286000
+				m_flInput1 = 0.321000
+				m_flOutput0 = 1.017000
+				m_flOutput1 = 1.019000
+			}
+			m_bOnlyRenderInEffecsGameOverlay = true
+			m_flMinSize =
+			{
+				m_nType = "PF_TYPE_CONTROL_POINT_COMPONENT"
+				m_nControlPoint = 34
+				m_nVectorComponent = 0
+			}
+			m_flMaxSize =
+			{
+				m_nType = "PF_TYPE_CONTROL_POINT_COMPONENT"
+				m_nControlPoint = 34
+				m_nVectorComponent = 0
+			}
+			m_nFogType = "PARTICLE_FOG_DISABLED"
+			m_bDisableZBuffering = true
+			m_nAnimationType = "ANIMATION_TYPE_MANUAL_FRAMES"
+			m_flCenterXOffset =
+			{
+				m_nType = "PF_TYPE_COLLECTION_AGE"
+				m_nMapType = "PF_MAP_TYPE_REMAP"
+				m_nInputMode = "PF_INPUT_MODE_CLAMPED"
+				m_flInput0 = 0.286000
+				m_flInput1 = 0.321000
+				m_flOutput0 = 0.067000
+				m_flOutput1 = 0.074000
+			}
+			m_flCenterYOffset =
+			{
+				m_nType = "PF_TYPE_CONTROL_POINT_COMPONENT"
+				m_nMapType = "PF_MAP_TYPE_REMAP"
+				m_nControlPoint = 34
+				m_nVectorComponent = 2
+				m_flInput0 = -1.000000
+				m_flInput1 = 1.000000
+				m_flOutput0 = -1.000000
+				m_flOutput1 = 1.000000
+			}
+			m_flDepthBias =
+			{
+				m_nType = "PF_TYPE_LITERAL"
+				m_flLiteralValue = 0.000000
+			}
+		},		{
+			_class = "C_OP_RenderSprites"
+			m_vecTexturesInput =
+			[
+				{
+					m_hTexture = resource:"materials/swift_mvp_effect/mvp_emblem.vtex"
+				},
+			]
+			m_flSelfIllumAmount =
+			{
+				m_nType = "PF_TYPE_LITERAL"
+				m_flLiteralValue = 1.000000
+			}
+			m_flAlphaScale =
+			{
+				m_nType = "PF_TYPE_COLLECTION_AGE"
+				m_nMapType = "PF_MAP_TYPE_NOTCHED"
+				m_flNotchedRangeMin = 0.321000
+				m_flNotchedRangeMax = 0.405900
+				m_flNotchedOutputOutside = 0.000000
+				m_flNotchedOutputInside = 1.000000
+			}
+			m_flRadiusScale =
+			{
+				m_nType = "PF_TYPE_COLLECTION_AGE"
+				m_nMapType = "PF_MAP_TYPE_REMAP"
+				m_nInputMode = "PF_INPUT_MODE_CLAMPED"
+				m_flInput0 = 0.321000
+				m_flInput1 = 0.406000
+				m_flOutput0 = 1.019000
+				m_flOutput1 = 1.011000
+			}
+			m_bOnlyRenderInEffecsGameOverlay = true
+			m_flMinSize =
+			{
+				m_nType = "PF_TYPE_CONTROL_POINT_COMPONENT"
+				m_nControlPoint = 34
+				m_nVectorComponent = 0
+			}
+			m_flMaxSize =
+			{
+				m_nType = "PF_TYPE_CONTROL_POINT_COMPONENT"
+				m_nControlPoint = 34
+				m_nVectorComponent = 0
+			}
+			m_nFogType = "PARTICLE_FOG_DISABLED"
+			m_bDisableZBuffering = true
+			m_nAnimationType = "ANIMATION_TYPE_MANUAL_FRAMES"
+			m_flCenterXOffset =
+			{
+				m_nType = "PF_TYPE_COLLECTION_AGE"
+				m_nMapType = "PF_MAP_TYPE_REMAP"
+				m_nInputMode = "PF_INPUT_MODE_CLAMPED"
+				m_flInput0 = 0.321000
+				m_flInput1 = 0.406000
+				m_flOutput0 = 0.074000
+				m_flOutput1 = 0.045000
+			}
+			m_flCenterYOffset =
+			{
+				m_nType = "PF_TYPE_CONTROL_POINT_COMPONENT"
+				m_nMapType = "PF_MAP_TYPE_REMAP"
+				m_nControlPoint = 34
+				m_nVectorComponent = 2
+				m_flInput0 = -1.000000
+				m_flInput1 = 1.000000
+				m_flOutput0 = -1.000000
+				m_flOutput1 = 1.000000
+			}
+			m_flDepthBias =
+			{
+				m_nType = "PF_TYPE_LITERAL"
+				m_flLiteralValue = 0.000000
+			}
+		},		{
+			_class = "C_OP_RenderSprites"
+			m_vecTexturesInput =
+			[
+				{
+					m_hTexture = resource:"materials/swift_mvp_effect/mvp_emblem.vtex"
+				},
+			]
+			m_flSelfIllumAmount =
+			{
+				m_nType = "PF_TYPE_LITERAL"
+				m_flLiteralValue = 1.000000
+			}
+			m_flAlphaScale =
+			{
+				m_nType = "PF_TYPE_COLLECTION_AGE"
+				m_nMapType = "PF_MAP_TYPE_NOTCHED"
+				m_flNotchedRangeMin = 0.406000
+				m_flNotchedRangeMax = 0.519900
+				m_flNotchedOutputOutside = 0.000000
+				m_flNotchedOutputInside = 1.000000
+			}
+			m_flRadiusScale =
+			{
+				m_nType = "PF_TYPE_COLLECTION_AGE"
+				m_nMapType = "PF_MAP_TYPE_REMAP"
+				m_nInputMode = "PF_INPUT_MODE_CLAMPED"
+				m_flInput0 = 0.406000
+				m_flInput1 = 0.520000
+				m_flOutput0 = 1.011000
+				m_flOutput1 = 1.000000
+			}
+			m_bOnlyRenderInEffecsGameOverlay = true
+			m_flMinSize =
+			{
+				m_nType = "PF_TYPE_CONTROL_POINT_COMPONENT"
+				m_nControlPoint = 34
+				m_nVectorComponent = 0
+			}
+			m_flMaxSize =
+			{
+				m_nType = "PF_TYPE_CONTROL_POINT_COMPONENT"
+				m_nControlPoint = 34
+				m_nVectorComponent = 0
+			}
+			m_nFogType = "PARTICLE_FOG_DISABLED"
+			m_bDisableZBuffering = true
+			m_nAnimationType = "ANIMATION_TYPE_MANUAL_FRAMES"
+			m_flCenterXOffset =
+			{
+				m_nType = "PF_TYPE_COLLECTION_AGE"
+				m_nMapType = "PF_MAP_TYPE_REMAP"
+				m_nInputMode = "PF_INPUT_MODE_CLAMPED"
+				m_flInput0 = 0.406000
+				m_flInput1 = 0.520000
+				m_flOutput0 = 0.045000
+				m_flOutput1 = 0.000000
+			}
+			m_flCenterYOffset =
+			{
+				m_nType = "PF_TYPE_CONTROL_POINT_COMPONENT"
+				m_nMapType = "PF_MAP_TYPE_REMAP"
+				m_nControlPoint = 34
+				m_nVectorComponent = 2
+				m_flInput0 = -1.000000
+				m_flInput1 = 1.000000
+				m_flOutput0 = -1.000000
+				m_flOutput1 = 1.000000
+			}
+			m_flDepthBias =
+			{
+				m_nType = "PF_TYPE_LITERAL"
+				m_flLiteralValue = 0.000000
+			}
+		},		{
+			_class = "C_OP_RenderSprites"
+			m_vecTexturesInput =
+			[
+				{
+					m_hTexture = resource:"materials/swift_mvp_effect/mvp_emblem.vtex"
+				},
+			]
+			m_flSelfIllumAmount =
+			{
+				m_nType = "PF_TYPE_LITERAL"
+				m_flLiteralValue = 1.000000
+			}
+			m_flAlphaScale =
+			{
+				m_nType = "PF_TYPE_COLLECTION_AGE"
+				m_nMapType = "PF_MAP_TYPE_NOTCHED"
+				m_flNotchedRangeMin = 0.520000
+				m_flNotchedRangeMax = 1.619900
+				m_flNotchedOutputOutside = 0.000000
+				m_flNotchedOutputInside = 1.000000
+			}
+			m_flRadiusScale =
+			{
+				m_nType = "PF_TYPE_COLLECTION_AGE"
+				m_nMapType = "PF_MAP_TYPE_REMAP"
+				m_nInputMode = "PF_INPUT_MODE_CLAMPED"
+				m_flInput0 = 0.520000
+				m_flInput1 = 1.620000
+				m_flOutput0 = 1.000000
+				m_flOutput1 = 1.000000
+			}
+			m_bOnlyRenderInEffecsGameOverlay = true
+			m_flMinSize =
+			{
+				m_nType = "PF_TYPE_CONTROL_POINT_COMPONENT"
+				m_nControlPoint = 34
+				m_nVectorComponent = 0
+			}
+			m_flMaxSize =
+			{
+				m_nType = "PF_TYPE_CONTROL_POINT_COMPONENT"
+				m_nControlPoint = 34
+				m_nVectorComponent = 0
+			}
+			m_nFogType = "PARTICLE_FOG_DISABLED"
+			m_bDisableZBuffering = true
+			m_nAnimationType = "ANIMATION_TYPE_MANUAL_FRAMES"
+			m_flCenterXOffset =
+			{
+				m_nType = "PF_TYPE_COLLECTION_AGE"
+				m_nMapType = "PF_MAP_TYPE_REMAP"
+				m_nInputMode = "PF_INPUT_MODE_CLAMPED"
+				m_flInput0 = 0.520000
+				m_flInput1 = 1.620000
+				m_flOutput0 = 0.000000
+				m_flOutput1 = 0.000000
+			}
+			m_flCenterYOffset =
+			{
+				m_nType = "PF_TYPE_CONTROL_POINT_COMPONENT"
+				m_nMapType = "PF_MAP_TYPE_REMAP"
+				m_nControlPoint = 34
+				m_nVectorComponent = 2
+				m_flInput0 = -1.000000
+				m_flInput1 = 1.000000
+				m_flOutput0 = -1.000000
+				m_flOutput1 = 1.000000
+			}
+			m_flDepthBias =
+			{
+				m_nType = "PF_TYPE_LITERAL"
+				m_flLiteralValue = 0.000000
+			}
+		},		{
+			_class = "C_OP_RenderSprites"
+			m_vecTexturesInput =
+			[
+				{
+					m_hTexture = resource:"materials/swift_mvp_effect/mvp_emblem.vtex"
+				},
+			]
+			m_flSelfIllumAmount =
+			{
+				m_nType = "PF_TYPE_LITERAL"
+				m_flLiteralValue = 1.000000
+			}
+			m_flAlphaScale =
+			{
+				m_nType = "PF_TYPE_COLLECTION_AGE"
+				m_nMapType = "PF_MAP_TYPE_NOTCHED"
+				m_flNotchedRangeMin = 1.620000
+				m_flNotchedRangeMax = 1.743900
+				m_flNotchedOutputOutside = 0.000000
+				m_flNotchedOutputInside = 1.000000
+			}
+			m_flRadiusScale =
+			{
+				m_nType = "PF_TYPE_COLLECTION_AGE"
+				m_nMapType = "PF_MAP_TYPE_REMAP"
+				m_nInputMode = "PF_INPUT_MODE_CLAMPED"
+				m_flInput0 = 1.620000
+				m_flInput1 = 1.744000
+				m_flOutput0 = 1.000000
+				m_flOutput1 = 0.999000
+			}
+			m_bOnlyRenderInEffecsGameOverlay = true
+			m_flMinSize =
+			{
+				m_nType = "PF_TYPE_CONTROL_POINT_COMPONENT"
+				m_nControlPoint = 34
+				m_nVectorComponent = 0
+			}
+			m_flMaxSize =
+			{
+				m_nType = "PF_TYPE_CONTROL_POINT_COMPONENT"
+				m_nControlPoint = 34
+				m_nVectorComponent = 0
+			}
+			m_nFogType = "PARTICLE_FOG_DISABLED"
+			m_bDisableZBuffering = true
+			m_nAnimationType = "ANIMATION_TYPE_MANUAL_FRAMES"
+			m_flCenterXOffset =
+			{
+				m_nType = "PF_TYPE_COLLECTION_AGE"
+				m_nMapType = "PF_MAP_TYPE_REMAP"
+				m_nInputMode = "PF_INPUT_MODE_CLAMPED"
+				m_flInput0 = 1.620000
+				m_flInput1 = 1.744000
+				m_flOutput0 = 0.000000
+				m_flOutput1 = 0.009000
+			}
+			m_flCenterYOffset =
+			{
+				m_nType = "PF_TYPE_CONTROL_POINT_COMPONENT"
+				m_nMapType = "PF_MAP_TYPE_REMAP"
+				m_nControlPoint = 34
+				m_nVectorComponent = 2
+				m_flInput0 = -1.000000
+				m_flInput1 = 1.000000
+				m_flOutput0 = -1.000000
+				m_flOutput1 = 1.000000
+			}
+			m_flDepthBias =
+			{
+				m_nType = "PF_TYPE_LITERAL"
+				m_flLiteralValue = 0.000000
+			}
+		},		{
+			_class = "C_OP_RenderSprites"
+			m_vecTexturesInput =
+			[
+				{
+					m_hTexture = resource:"materials/swift_mvp_effect/mvp_emblem.vtex"
+				},
+			]
+			m_flSelfIllumAmount =
+			{
+				m_nType = "PF_TYPE_LITERAL"
+				m_flLiteralValue = 1.000000
+			}
+			m_flAlphaScale =
+			{
+				m_nType = "PF_TYPE_COLLECTION_AGE"
+				m_nMapType = "PF_MAP_TYPE_NOTCHED"
+				m_flNotchedRangeMin = 1.744000
+				m_flNotchedRangeMax = 1.867900
+				m_flNotchedOutputOutside = 0.000000
+				m_flNotchedOutputInside = 1.000000
+			}
+			m_flRadiusScale =
+			{
+				m_nType = "PF_TYPE_COLLECTION_AGE"
+				m_nMapType = "PF_MAP_TYPE_REMAP"
+				m_nInputMode = "PF_INPUT_MODE_CLAMPED"
+				m_flInput0 = 1.744000
+				m_flInput1 = 1.868000
+				m_flOutput0 = 0.999000
+				m_flOutput1 = 0.991000
+			}
+			m_bOnlyRenderInEffecsGameOverlay = true
+			m_flMinSize =
+			{
+				m_nType = "PF_TYPE_CONTROL_POINT_COMPONENT"
+				m_nControlPoint = 34
+				m_nVectorComponent = 0
+			}
+			m_flMaxSize =
+			{
+				m_nType = "PF_TYPE_CONTROL_POINT_COMPONENT"
+				m_nControlPoint = 34
+				m_nVectorComponent = 0
+			}
+			m_nFogType = "PARTICLE_FOG_DISABLED"
+			m_bDisableZBuffering = true
+			m_nAnimationType = "ANIMATION_TYPE_MANUAL_FRAMES"
+			m_flCenterXOffset =
+			{
+				m_nType = "PF_TYPE_COLLECTION_AGE"
+				m_nMapType = "PF_MAP_TYPE_REMAP"
+				m_nInputMode = "PF_INPUT_MODE_CLAMPED"
+				m_flInput0 = 1.744000
+				m_flInput1 = 1.868000
+				m_flOutput0 = 0.009000
+				m_flOutput1 = 0.072000
+			}
+			m_flCenterYOffset =
+			{
+				m_nType = "PF_TYPE_CONTROL_POINT_COMPONENT"
+				m_nMapType = "PF_MAP_TYPE_REMAP"
+				m_nControlPoint = 34
+				m_nVectorComponent = 2
+				m_flInput0 = -1.000000
+				m_flInput1 = 1.000000
+				m_flOutput0 = -1.000000
+				m_flOutput1 = 1.000000
+			}
+			m_flDepthBias =
+			{
+				m_nType = "PF_TYPE_LITERAL"
+				m_flLiteralValue = 0.000000
+			}
+		},		{
+			_class = "C_OP_RenderSprites"
+			m_vecTexturesInput =
+			[
+				{
+					m_hTexture = resource:"materials/swift_mvp_effect/mvp_emblem.vtex"
+				},
+			]
+			m_flSelfIllumAmount =
+			{
+				m_nType = "PF_TYPE_LITERAL"
+				m_flLiteralValue = 1.000000
+			}
+			m_flAlphaScale =
+			{
+				m_nType = "PF_TYPE_COLLECTION_AGE"
+				m_nMapType = "PF_MAP_TYPE_NOTCHED"
+				m_flNotchedRangeMin = 1.868000
+				m_flNotchedRangeMax = 1.991900
+				m_flNotchedOutputOutside = 0.000000
+				m_flNotchedOutputInside = 1.000000
+			}
+			m_flRadiusScale =
+			{
+				m_nType = "PF_TYPE_COLLECTION_AGE"
+				m_nMapType = "PF_MAP_TYPE_REMAP"
+				m_nInputMode = "PF_INPUT_MODE_CLAMPED"
+				m_flInput0 = 1.868000
+				m_flInput1 = 1.992000
+				m_flOutput0 = 0.991000
+				m_flOutput1 = 0.970000
+			}
+			m_bOnlyRenderInEffecsGameOverlay = true
+			m_flMinSize =
+			{
+				m_nType = "PF_TYPE_CONTROL_POINT_COMPONENT"
+				m_nControlPoint = 34
+				m_nVectorComponent = 0
+			}
+			m_flMaxSize =
+			{
+				m_nType = "PF_TYPE_CONTROL_POINT_COMPONENT"
+				m_nControlPoint = 34
+				m_nVectorComponent = 0
+			}
+			m_nFogType = "PARTICLE_FOG_DISABLED"
+			m_bDisableZBuffering = true
+			m_nAnimationType = "ANIMATION_TYPE_MANUAL_FRAMES"
+			m_flCenterXOffset =
+			{
+				m_nType = "PF_TYPE_COLLECTION_AGE"
+				m_nMapType = "PF_MAP_TYPE_REMAP"
+				m_nInputMode = "PF_INPUT_MODE_CLAMPED"
+				m_flInput0 = 1.868000
+				m_flInput1 = 1.992000
+				m_flOutput0 = 0.072000
+				m_flOutput1 = 0.242000
+			}
+			m_flCenterYOffset =
+			{
+				m_nType = "PF_TYPE_CONTROL_POINT_COMPONENT"
+				m_nMapType = "PF_MAP_TYPE_REMAP"
+				m_nControlPoint = 34
+				m_nVectorComponent = 2
+				m_flInput0 = -1.000000
+				m_flInput1 = 1.000000
+				m_flOutput0 = -1.000000
+				m_flOutput1 = 1.000000
+			}
+			m_flDepthBias =
+			{
+				m_nType = "PF_TYPE_LITERAL"
+				m_flLiteralValue = 0.000000
+			}
+		},		{
+			_class = "C_OP_RenderSprites"
+			m_vecTexturesInput =
+			[
+				{
+					m_hTexture = resource:"materials/swift_mvp_effect/mvp_emblem.vtex"
+				},
+			]
+			m_flSelfIllumAmount =
+			{
+				m_nType = "PF_TYPE_LITERAL"
+				m_flLiteralValue = 1.000000
+			}
+			m_flAlphaScale =
+			{
+				m_nType = "PF_TYPE_COLLECTION_AGE"
+				m_nMapType = "PF_MAP_TYPE_NOTCHED"
+				m_flNotchedRangeMin = 1.992000
+				m_flNotchedRangeMax = 2.115900
+				m_flNotchedOutputOutside = 0.000000
+				m_flNotchedOutputInside = 1.000000
+			}
+			m_flRadiusScale =
+			{
+				m_nType = "PF_TYPE_COLLECTION_AGE"
+				m_nMapType = "PF_MAP_TYPE_REMAP"
+				m_nInputMode = "PF_INPUT_MODE_CLAMPED"
+				m_flInput0 = 1.992000
+				m_flInput1 = 2.116000
+				m_flOutput0 = 0.970000
+				m_flOutput1 = 0.928000
+			}
+			m_bOnlyRenderInEffecsGameOverlay = true
+			m_flMinSize =
+			{
+				m_nType = "PF_TYPE_CONTROL_POINT_COMPONENT"
+				m_nControlPoint = 34
+				m_nVectorComponent = 0
+			}
+			m_flMaxSize =
+			{
+				m_nType = "PF_TYPE_CONTROL_POINT_COMPONENT"
+				m_nControlPoint = 34
+				m_nVectorComponent = 0
+			}
+			m_nFogType = "PARTICLE_FOG_DISABLED"
+			m_bDisableZBuffering = true
+			m_nAnimationType = "ANIMATION_TYPE_MANUAL_FRAMES"
+			m_flCenterXOffset =
+			{
+				m_nType = "PF_TYPE_COLLECTION_AGE"
+				m_nMapType = "PF_MAP_TYPE_REMAP"
+				m_nInputMode = "PF_INPUT_MODE_CLAMPED"
+				m_flInput0 = 1.992000
+				m_flInput1 = 2.116000
+				m_flOutput0 = 0.242000
+				m_flOutput1 = 0.573000
+			}
+			m_flCenterYOffset =
+			{
+				m_nType = "PF_TYPE_CONTROL_POINT_COMPONENT"
+				m_nMapType = "PF_MAP_TYPE_REMAP"
+				m_nControlPoint = 34
+				m_nVectorComponent = 2
+				m_flInput0 = -1.000000
+				m_flInput1 = 1.000000
+				m_flOutput0 = -1.000000
+				m_flOutput1 = 1.000000
+			}
+			m_flDepthBias =
+			{
+				m_nType = "PF_TYPE_LITERAL"
+				m_flLiteralValue = 0.000000
+			}
+		},		{
+			_class = "C_OP_RenderSprites"
+			m_vecTexturesInput =
+			[
+				{
+					m_hTexture = resource:"materials/swift_mvp_effect/mvp_emblem.vtex"
+				},
+			]
+			m_flSelfIllumAmount =
+			{
+				m_nType = "PF_TYPE_LITERAL"
+				m_flLiteralValue = 1.000000
+			}
+			m_flAlphaScale =
+			{
+				m_nType = "PF_TYPE_COLLECTION_AGE"
+				m_nMapType = "PF_MAP_TYPE_NOTCHED"
+				m_flNotchedRangeMin = 2.116000
+				m_flNotchedRangeMax = 2.239900
+				m_flNotchedOutputOutside = 0.000000
+				m_flNotchedOutputInside = 1.000000
+			}
+			m_flRadiusScale =
+			{
+				m_nType = "PF_TYPE_COLLECTION_AGE"
+				m_nMapType = "PF_MAP_TYPE_REMAP"
+				m_nInputMode = "PF_INPUT_MODE_CLAMPED"
+				m_flInput0 = 2.116000
+				m_flInput1 = 2.240000
+				m_flOutput0 = 0.928000
+				m_flOutput1 = 0.860000
+			}
+			m_bOnlyRenderInEffecsGameOverlay = true
+			m_flMinSize =
+			{
+				m_nType = "PF_TYPE_CONTROL_POINT_COMPONENT"
+				m_nControlPoint = 34
+				m_nVectorComponent = 0
+			}
+			m_flMaxSize =
+			{
+				m_nType = "PF_TYPE_CONTROL_POINT_COMPONENT"
+				m_nControlPoint = 34
+				m_nVectorComponent = 0
+			}
+			m_nFogType = "PARTICLE_FOG_DISABLED"
+			m_bDisableZBuffering = true
+			m_nAnimationType = "ANIMATION_TYPE_MANUAL_FRAMES"
+			m_flCenterXOffset =
+			{
+				m_nType = "PF_TYPE_COLLECTION_AGE"
+				m_nMapType = "PF_MAP_TYPE_REMAP"
+				m_nInputMode = "PF_INPUT_MODE_CLAMPED"
+				m_flInput0 = 2.116000
+				m_flInput1 = 2.240000
+				m_flOutput0 = 0.573000
+				m_flOutput1 = 1.120000
+			}
+			m_flCenterYOffset =
+			{
+				m_nType = "PF_TYPE_CONTROL_POINT_COMPONENT"
+				m_nMapType = "PF_MAP_TYPE_REMAP"
+				m_nControlPoint = 34
+				m_nVectorComponent = 2
+				m_flInput0 = -1.000000
+				m_flInput1 = 1.000000
+				m_flOutput0 = -1.000000
+				m_flOutput1 = 1.000000
+			}
+			m_flDepthBias =
+			{
+				m_nType = "PF_TYPE_LITERAL"
+				m_flLiteralValue = 0.000000
+			}
+		},		{
+			_class = "C_OP_RenderSprites"
+			m_vecTexturesInput =
+			[
+				{
+					m_hTexture = resource:"materials/swift_mvp_effect/mvp_emblem.vtex"
+				},
+			]
+			m_flSelfIllumAmount =
+			{
+				m_nType = "PF_TYPE_LITERAL"
+				m_flLiteralValue = 1.000000
+			}
+			m_flAlphaScale =
+			{
+				m_nType = "PF_TYPE_COLLECTION_AGE"
+				m_nMapType = "PF_MAP_TYPE_NOTCHED"
+				m_flNotchedRangeMin = 2.240000
+				m_flNotchedRangeMax = 2.400000
+				m_flNotchedOutputOutside = 0.000000
+				m_flNotchedOutputInside = 1.000000
+			}
+			m_flRadiusScale =
+			{
+				m_nType = "PF_TYPE_COLLECTION_AGE"
+				m_nMapType = "PF_MAP_TYPE_REMAP"
+				m_nInputMode = "PF_INPUT_MODE_CLAMPED"
+				m_flInput0 = 2.240000
+				m_flInput1 = 2.400000
+				m_flOutput0 = 0.860000
+				m_flOutput1 = 0.860000
+			}
+			m_bOnlyRenderInEffecsGameOverlay = true
+			m_flMinSize =
+			{
+				m_nType = "PF_TYPE_CONTROL_POINT_COMPONENT"
+				m_nControlPoint = 34
+				m_nVectorComponent = 0
+			}
+			m_flMaxSize =
+			{
+				m_nType = "PF_TYPE_CONTROL_POINT_COMPONENT"
+				m_nControlPoint = 34
+				m_nVectorComponent = 0
+			}
+			m_nFogType = "PARTICLE_FOG_DISABLED"
+			m_bDisableZBuffering = true
+			m_nAnimationType = "ANIMATION_TYPE_MANUAL_FRAMES"
+			m_flCenterXOffset =
+			{
+				m_nType = "PF_TYPE_COLLECTION_AGE"
+				m_nMapType = "PF_MAP_TYPE_REMAP"
+				m_nInputMode = "PF_INPUT_MODE_CLAMPED"
+				m_flInput0 = 2.240000
+				m_flInput1 = 2.400000
+				m_flOutput0 = 1.120000
 				m_flOutput1 = 1.120000
 			}
 			m_flCenterYOffset =
