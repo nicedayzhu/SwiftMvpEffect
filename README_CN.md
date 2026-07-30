@@ -2,19 +2,19 @@
 
 基于 Swift Particle Menu 已验证架构制作的 SwiftlyS2 回合 MVP 屏幕粒子插件。
 CS2 发出 `round_mvp` 事件时，插件为目标观看者创建 owner-only
-`info_particle_system`，客户端以 25 FPS 播放 60 帧金色 MVP 横幅。整个动画由一个
-60 帧 sequence atlas 和一个粒子根连续播放，避免服务端阶段切换造成卡顿。
+`info_particle_system`，客户端播放透明金色 MVP 主视觉。位置和淡入淡出由粒子生命周期
+在客户端本地计算，服务器只负责创建与清理实体。
 
-![MVP 动画关键帧预览](docs/mvp_contact_sheet.jpg)
+![透明 MVP 主视觉](assets/generated/mvp_emblem_transparent.png)
 
 ## 已实现
 
 - 自动监听 `round_mvp`
 - 默认向所有在线玩家展示，可配置为只向 MVP 玩家展示
 - `swift_mvp_test` 单人测试命令
-- 单个 60 帧 atlas、VTEX、VPCF 自动生成
-- 1280×512 → 512×512 透明 carrier、强制无损 4096 atlas，保持横幅比例和细节
-- 默认缩小为 `scale=0.55`，并以左侧滑入、回弹、淡出、右侧滑出的过场展示
+- 单个透明 MVP 主视觉、VTEX、VPCF 自动生成
+- 透明源图 → 1024×1024 透明 carrier、无损 1024 纹理，显著降低首次显示开销
+- 默认 `scale=0.50`，客户端平滑地从左侧滑入并从右侧滑出
 - 每名观看者独立 transmit，其他玩家明确不可见
 - 重复触发、断线、下一回合、卸载时幂等清理
 - Source 2 资源编译与严格验证脚本
@@ -27,8 +27,7 @@ CS2 发出 `round_mvp` 事件时，插件为目标观看者创建 owner-only
 {
   "enabled": true,
   "audience": "all",
-  "scale": 0.55,
-  "offsetX": 0.0,
+  "scale": 0.50,
   "offsetY": 0.04
 }
 ```
@@ -58,7 +57,7 @@ pwsh -NoProfile -File .\tools\build_source2_assets.ps1 -Force
 
 ```text
 game/csgo_addons/swift_mvp_effect/
-  materials/swift_mvp_effect/mvp_animation_60f.vtex_c
+  materials/swift_mvp_effect/mvp_emblem.vtex_c
   particles/swift_mvp_effect/mvp_overlay.vpcf_c
 ```
 
@@ -164,7 +163,6 @@ Game              csgo
 - `ptext`：独立会话、连接变化后的 transmit 隔离
 - `smb`：多实体生命周期与失败清理
 
-MVP 序列帧本身不需要服务端逐帧更新或阶段定时器；单个 VPCF 使用
-`ANIMATION_TYPE_FIT_LIFETIME`、`m_bAnimateInFPS=true` 和
-`m_flAnimationRate=25` 连续播放完整 60 帧。BJ 同款的每 Tick 控制点动画使用 CP34
-传 scale 与屏幕偏移、CP17.x 传 alpha：横幅从左侧滑入中央并回弹，停留后淡出并向右侧滑出。
+MVP 只在开始时写入一次 CP34（scale 与纵向偏移）。单个 VPCF 以
+`PF_TYPE_PARTICLE_AGE_NORMALIZED` 本地计算横向位置，并用 `C_OP_FadeInSimple` /
+`C_OP_FadeOutSimple` 本地淡入淡出；因此不存在服务端逐 Tick 的控制点复制，也没有黑色背景。

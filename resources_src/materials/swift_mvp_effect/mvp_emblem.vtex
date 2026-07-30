@@ -6,7 +6,7 @@
 		"CDmeInputTexture"
 		{
 			"m_name" "string" "InputTexture0"
-			"m_fileName" "string" "materials/swift_mvp_effect/mvp_animation_60f.mks"
+			"m_fileName" "string" "materials/swift_mvp_effect/mvp_emblem.png"
 			"m_colorSpace" "string" "srgb"
 			"m_typeString" "string" "2D"
 			"m_imageProcessorArray" "element_array"
@@ -23,8 +23,8 @@
 	"m_outputTypeString" "string" "2D"
 	"m_outputFormat" "string" "RGBA8888"
 	"m_outputClearColor" "vector4" "0 0 0 0"
-	"m_nOutputMinDimension" "int" "4096"
-	"m_nOutputMaxDimension" "int" "4096"
+	"m_nOutputMinDimension" "int" "1024"
+	"m_nOutputMaxDimension" "int" "1024"
 	"m_textureOutputChannelArray" "element_array"
 	[
 		"CDmeTextureOutputChannel"

@@ -1,7 +1,7 @@
 # AGENTS.md — SwiftMvpEffect
 
 SwiftlyS2 回合 MVP 屏幕粒子插件。运行时使用 owner-only
-`info_particle_system`，客户端 VPCF 播放 60 帧序列图。
+`info_particle_system`，客户端 VPCF 播放透明 MVP 主视觉并以粒子年龄本地驱动运动。
 
 ## 技术栈
 
@@ -13,21 +13,21 @@ SwiftlyS2 回合 MVP 屏幕粒子插件。运行时使用 owner-only
 ## 资源分层
 
 - `assets/source/`：用户提供的原始素材包，禁止生成脚本覆盖。
+- `assets/generated/`：经用户授权生成的透明 MVP 主视觉；生成器以此为输入。
 - `tools/templates/`：VTEX/VPCF 结构源。
 - `resources_src/`：由 `tools/generate_assets.ps1` 生成，禁止手改。
 - `build/`：插件、清单和临时编译列表，不纳入 Git。
 
 ## 关键契约
 
-- 素材固定为 60 帧、25 FPS、2.4 秒，由一个 60 帧 sequence atlas 播放，避免服务端阶段切换造成卡顿。
-- 每个动画 renderer 必须同时设置 `m_bAnimateInFPS = true` 和
-  `m_flAnimationRate = 25.000000`；只设置前者会退化为低频跳帧。
-- 原图 1280×512；生成器等比放入 512×512 透明 carrier，强制产出无损 4096 atlas，避免
-  overlay 拉伸、MKS 自动降采样和 DXT block 模糊。
+- 素材为一张透明金色 MVP 主视觉；生成器等比放入 1024×1024 透明 carrier，产出无损
+  `RGBA8888` 1024 纹理，避免黑底、MKS 降采样与大图集首帧卡顿。
+- 横向移动必须用 `PF_TYPE_PARTICLE_AGE_NORMALIZED` 在客户端本地推进；不要以服务器 Tick
+  反复复制位置/alpha。
 - 单个根的 `m_flDepthSortBias` 固定为 `0`。
 - 每个观看者只创建一个短生命周期实体，并对其他玩家显式关闭 transmit。
-- 根的 CP34：`x=scale`、`y=offsetX`、`z=offsetY`；CP17.x 为 alpha。运行时以每 Tick
-  更新这两个槽，完成左侧滑入、回弹、淡出和右侧滑出。
+- 根的 CP34：`x=scale`、`z=offsetY`；Start 前只写一次。横向移动与淡入淡出完全由 VPCF
+  生命周期计算，完成左侧滑入、右侧滑出。
 - Start 前必须完成 transmit、CP assignment 和 CP value。
 - 断线、回合开始、重复触发、卸载都必须走同一个幂等清理入口。
 - 资源变化后必须重启客户端和服务器；DLL 热重载不会刷新客户端粒子缓存。

@@ -57,14 +57,12 @@
 			m_bLockRot = true
 		},
 		{
-			_class = "C_OP_SetFloat"
-			m_InputValue =
-			{
-				m_nType = "PF_TYPE_CONTROL_POINT_COMPONENT"
-				m_nControlPoint = 17
-				m_nVectorComponent = 0
-			}
-			m_nOutputField = 7
+			_class = "C_OP_FadeInSimple"
+			m_flFadeInTime = 0.140000
+		},
+		{
+			_class = "C_OP_FadeOutSimple"
+			m_flFadeOutTime = 0.280000
 		},
 		{
 			_class = "C_OP_Decay"
@@ -77,7 +75,7 @@
 			m_vecTexturesInput =
 			[
 				{
-					m_hTexture = resource:"materials/swift_mvp_effect/mvp_animation_60f.vtex"
+					m_hTexture = resource:"materials/swift_mvp_effect/mvp_emblem.vtex"
 				},
 			]
 			m_flSelfIllumAmount =
@@ -94,24 +92,21 @@
 			}
 			m_flMaxSize =
 			{
-				m_nType = "PF_TYPE_LITERAL"
-				m_flLiteralValue = 2.000000
+				m_nType = "PF_TYPE_CONTROL_POINT_COMPONENT"
+				m_nControlPoint = 34
+				m_nVectorComponent = 0
 			}
 			m_nFogType = "PARTICLE_FOG_DISABLED"
 			m_bDisableZBuffering = true
-			m_nAnimationType = "ANIMATION_TYPE_FIT_LIFETIME"
-			m_flAnimationRate = 25.000000
-			m_bAnimateInFPS = true
+			m_nAnimationType = "ANIMATION_TYPE_MANUAL_FRAMES"
 			m_flCenterXOffset =
 			{
-				m_nType = "PF_TYPE_CONTROL_POINT_COMPONENT"
+				m_nType = "PF_TYPE_PARTICLE_AGE_NORMALIZED"
 				m_nMapType = "PF_MAP_TYPE_REMAP"
-				m_nControlPoint = 34
-				m_nVectorComponent = 1
-				m_flInput0 = -1.000000
+				m_flInput0 = 0.000000
 				m_flInput1 = 1.000000
-				m_flOutput0 = -1.000000
-				m_flOutput1 = 1.000000
+				m_flOutput0 = -1.120000
+				m_flOutput1 = 1.120000
 			}
 			m_flCenterYOffset =
 			{

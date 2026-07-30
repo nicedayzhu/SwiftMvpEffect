@@ -1,22 +1,22 @@
 {
   "schemaVersion": 1,
-  "sourceArchive": "clean_gold_operator_mvp_animation_pack_60f.zip",
-  "sourceSha256": "95a0076dbe99e7b109861830ed2070ed58d201dd234ed11dad335b5676827f1c",
-  "sourceFrameWidth": 1280,
-  "sourceFrameHeight": 512,
-  "frameCount": 60,
-  "framesPerSecond": 25,
+  "sourceImage": "mvp_emblem_transparent.png",
+  "sourceSha256": "22d22872a4130aa268b848316efb7691008e94e1045f5190d00268c3b04fe975",
+  "sourceFrameWidth": 1672,
+  "sourceFrameHeight": 941,
+  "frameCount": 1,
+  "framesPerSecond": 0,
   "durationSeconds": 2.4,
   "rootCount": 1,
-  "framesPerRoot": 60,
+  "framesPerRoot": 1,
   "rootLifetimeSeconds": 2.4,
-  "carrierWidth": 512,
-  "carrierHeight": 512,
-  "visibleContentHeight": 205,
+  "carrierWidth": 1024,
+  "carrierHeight": 1024,
+  "visibleContentHeight": 576,
   "particles": [
     "particles/swift_mvp_effect/mvp_overlay.vpcf"
   ],
   "textures": [
-    "materials/swift_mvp_effect/mvp_animation_60f.vtex"
+    "materials/swift_mvp_effect/mvp_emblem.vtex"
   ]
 }

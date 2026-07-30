@@ -1,7 +1,6 @@
 {
   "enabled": true,
   "audience": "all",
-  "scale": 0.55,
-  "offsetX": 0.0,
+  "scale": 0.50,
   "offsetY": 0.04
 }

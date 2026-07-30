@@ -44,40 +44,44 @@ foreach ($scriptFile in $scriptFiles) {
 
 & (Join-Path $PSScriptRoot "generate_assets.ps1")
 
-$frames = @(Get-ChildItem -LiteralPath $materialDir -File -Filter "mvp_frame_*.png")
-if ($frames.Count -ne 60) {
-    throw "Expected 60 generated frame PNGs, found $($frames.Count)."
-}
-
-$mksPath = Join-Path $materialDir "mvp_animation_60f.mks"
-$vtexPath = Join-Path $materialDir "mvp_animation_60f.vtex"
+$emblemPath = Join-Path $materialDir "mvp_emblem.png"
+$vtexPath = Join-Path $materialDir "mvp_emblem.vtex"
 $vpcfPath = Join-Path $particleDir "mvp_overlay.vpcf"
-foreach ($required in @($mksPath, $vtexPath, $vpcfPath)) {
+foreach ($required in @($emblemPath, $vtexPath, $vpcfPath)) {
     if (!(Test-Path -LiteralPath $required -PathType Leaf)) {
-        throw "Missing 60-frame animation resource: $required"
+        throw "Missing transparent MVP emblem resource: $required"
     }
 }
 
-$mks = Get-Content -Raw -LiteralPath $mksPath
-$mksMatches = [regex]::Matches(
-    $mks,
-    '(?m)^frame (mvp_frame_[0-9]{3}\.png) 1$')
-$mksFrameNames = @($mksMatches | ForEach-Object { $_.Groups[1].Value })
-if ($mksMatches.Count -ne 60 -or
-    @($mksFrameNames | Sort-Object -Unique).Count -ne 60) {
-    throw "The single MKS must reference all 60 frames exactly once."
+if (@(Get-ChildItem -LiteralPath $materialDir -File -Filter "mvp_frame_*.png").Count -ne 0) {
+    throw "Legacy MVP frame sequences must not remain in the lightweight asset pack."
+}
+
+Add-Type -AssemblyName System.Drawing
+$emblem = [System.Drawing.Bitmap]::new($emblemPath)
+try {
+    if ($emblem.Width -ne 1024 -or $emblem.Height -ne 1024) {
+        throw "Expected a 1024x1024 transparent emblem carrier, got $($emblem.Width)x$($emblem.Height)."
+    }
+    if ($emblem.GetPixel(0, 0).A -ne 0 -or
+        $emblem.GetPixel($emblem.Width - 1, $emblem.Height - 1).A -ne 0) {
+        throw "MVP emblem carrier corners must be transparent."
+    }
+}
+finally {
+    $emblem.Dispose()
 }
 
 $vtex = Get-Content -Raw -LiteralPath $vtexPath
 $vpcf = Get-Content -Raw -LiteralPath $vpcfPath
 $checks = [ordered]@{
-    "VTEX references the 60-frame MKS" =
-        $vtex.Contains("materials/swift_mvp_effect/mvp_animation_60f.mks")
+    "VTEX references the transparent emblem" =
+        $vtex.Contains("materials/swift_mvp_effect/mvp_emblem.png")
     "VTEX preserves alpha without block compression" =
         $vtex.Contains('"m_outputFormat" "string" "RGBA8888"')
-    "VTEX forces a 4096 atlas" =
-        ($vtex.Contains('"m_nOutputMinDimension" "int" "4096"') -and
-        $vtex.Contains('"m_nOutputMaxDimension" "int" "4096"'))
+    "VTEX is a lightweight 1024 texture" =
+        ($vtex.Contains('"m_nOutputMinDimension" "int" "1024"') -and
+        $vtex.Contains('"m_nOutputMaxDimension" "int" "1024"'))
     "VTEX disables LOD" =
         $vtex.Contains('"m_bNoLod" "bool" "1"')
     "VPCF has overlay renderer" =
@@ -86,17 +90,21 @@ $checks = [ordered]@{
         $vpcf.Contains("m_bDisableZBuffering = true")
     "VPCF has explicit depth sort" =
         $vpcf.Contains("m_flDepthSortBias = 0.000000")
-    "VPCF fits animation to lifetime" =
-        $vpcf.Contains('m_nAnimationType = "ANIMATION_TYPE_FIT_LIFETIME"')
-    "VPCF explicitly plays at 25 FPS" =
-        $vpcf.Contains("m_flAnimationRate = 25.000000")
     "VPCF lifetime is 2.4 seconds" =
         $vpcf.Contains("m_flLiteralValue = 2.400000")
-    "VPCF uses CP34 transform" =
+    "VPCF is a static sprite" =
+        $vpcf.Contains('m_nAnimationType = "ANIMATION_TYPE_MANUAL_FRAMES"')
+    "VPCF animates X locally from particle lifetime" =
+        ($vpcf.Contains('m_nType = "PF_TYPE_PARTICLE_AGE_NORMALIZED"') -and
+        $vpcf.Contains("m_flOutput0 = -1.120000") -and
+        $vpcf.Contains("m_flOutput1 = 1.120000"))
+    "VPCF fades locally" =
+        ($vpcf.Contains('"C_OP_FadeInSimple"') -and
+        $vpcf.Contains('"C_OP_FadeOutSimple"'))
+    "VPCF uses CP34 only for fixed layout" =
         ([regex]::Matches($vpcf, "m_nControlPoint = 34").Count -eq 3)
-    "VPCF uses CP17 alpha" =
-        (([regex]::Matches($vpcf, "m_nControlPoint = 17").Count -eq 1) -and
-        $vpcf.Contains("m_nOutputField = 7"))
+    "VPCF has no runtime alpha control point" =
+        ([regex]::Matches($vpcf, "m_nControlPoint = 17").Count -eq 0)
     "VPCF has no unresolved template token" =
         ![regex]::IsMatch($vpcf + $vtex, '\{\{[A-Z0-9_]+\}\}')
 }

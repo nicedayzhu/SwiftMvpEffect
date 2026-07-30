@@ -43,7 +43,7 @@ function Assert-SafeChildPath {
 
 function Get-MvpExpectedVpkEntries {
     return [string[]]@(
-        "materials/swift_mvp_effect/mvp_animation_60f.vtex_c",
+        "materials/swift_mvp_effect/mvp_emblem.vtex_c",
         "particles/swift_mvp_effect/mvp_overlay.vpcf_c"
     )
 }

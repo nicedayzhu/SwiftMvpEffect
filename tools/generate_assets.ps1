@@ -1,7 +1,7 @@
 param(
-    [string]$SourceArchive = (
-        Join-Path $PSScriptRoot "..\assets\source\clean_gold_operator_mvp_animation_pack_60f.zip"),
-    [int]$CanvasSize = 512
+    [string]$SourceImage = (
+        Join-Path $PSScriptRoot "..\assets\generated\mvp_emblem_transparent.png"),
+    [int]$CanvasSize = 1024
 )
 
 $ErrorActionPreference = "Stop"
@@ -14,21 +14,20 @@ if ($PSVersionTable.PSEdition -ne "Core" -or $PSVersionTable.PSVersion.Major -lt
     }
 
     & $pwsh.Source -NoProfile -ExecutionPolicy Bypass -File $PSCommandPath `
-        -SourceArchive $SourceArchive -CanvasSize $CanvasSize
+        -SourceImage $SourceImage -CanvasSize $CanvasSize
     exit $LASTEXITCODE
 }
 
 Add-Type -AssemblyName System.Drawing
-Add-Type -AssemblyName System.IO.Compression
 
 $projectRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
-$archivePath = [System.IO.Path]::GetFullPath($SourceArchive)
+$sourceImagePath = [System.IO.Path]::GetFullPath($SourceImage)
 $materialDir = Join-Path $projectRoot "resources_src\materials\swift_mvp_effect"
 $particleDir = Join-Path $projectRoot "resources_src\particles\swift_mvp_effect"
 $templateDir = Join-Path $PSScriptRoot "templates"
 
-if (!(Test-Path -LiteralPath $archivePath -PathType Leaf)) {
-    throw "MVP source archive not found: $archivePath"
+if (!(Test-Path -LiteralPath $sourceImagePath -PathType Leaf)) {
+    throw "Transparent MVP source image not found: $sourceImagePath"
 }
 if ($CanvasSize -lt 256 -or $CanvasSize -gt 1024) {
     throw "CanvasSize must be between 256 and 1024."
@@ -69,139 +68,98 @@ function Save-TextIfChanged {
     Save-BytesIfChanged -Bytes $bytes -Path $Path
 }
 
-$archive = [System.IO.Compression.ZipFile]::OpenRead($archivePath)
+$source = [System.Drawing.Bitmap]::new($sourceImagePath)
 try {
-    $entries = @(
-        $archive.Entries |
-            Where-Object {
-                $_.FullName -match
-                    '^clean_gold_operator_mvp_60_frames/clean_gold_operator_mvp_frame_[0-9]{3}\.png$'
-            } |
-            Sort-Object FullName
-    )
-    if ($entries.Count -ne 60) {
-        throw "Expected exactly 60 PNG frames, found $($entries.Count)."
+    $sourceWidth = $source.Width
+    $sourceHeight = $source.Height
+    $minX = $sourceWidth
+    $minY = $sourceHeight
+    $maxX = -1
+    $maxY = -1
+    for ($y = 0; $y -lt $sourceHeight; $y += 4) {
+        for ($x = 0; $x -lt $sourceWidth; $x += 4) {
+            if ($source.GetPixel($x, $y).A -gt 16) {
+                $minX = [Math]::Min($minX, $x)
+                $minY = [Math]::Min($minY, $y)
+                $maxX = [Math]::Max($maxX, $x)
+                $maxY = [Math]::Max($maxY, $y)
+            }
+        }
+    }
+    if ($maxX -lt $minX -or $maxY -lt $minY) {
+        throw "Transparent MVP source image does not contain visible pixels."
     }
 
-    $expectedNames = [System.Collections.Generic.HashSet[string]]::new(
-        [System.StringComparer]::OrdinalIgnoreCase)
-    $sourceWidth = 0
-    $sourceHeight = 0
+    $padding = 12
+    $minX = [Math]::Max(0, $minX - $padding)
+    $minY = [Math]::Max(0, $minY - $padding)
+    $maxX = [Math]::Min($sourceWidth - 1, $maxX + $padding)
+    $maxY = [Math]::Min($sourceHeight - 1, $maxY + $padding)
+    $cropWidth = $maxX - $minX + 1
+    $cropHeight = $maxY - $minY + 1
+    $scale = [Math]::Min(
+        ($CanvasSize * 0.90) / $cropWidth,
+        ($CanvasSize * 0.46) / $cropHeight)
+    $targetWidth = [Math]::Max(1, [int][Math]::Round($cropWidth * $scale))
+    $targetHeight = [Math]::Max(1, [int][Math]::Round($cropHeight * $scale))
+    $targetX = [int][Math]::Floor(($CanvasSize - $targetWidth) / 2.0)
+    $targetY = [int][Math]::Floor(($CanvasSize - $targetHeight) / 2.0)
 
-    for ($index = 0; $index -lt $entries.Count; $index++) {
-        $entry = $entries[$index]
-        $entryStream = $entry.Open()
+    $carrier = [System.Drawing.Bitmap]::new(
+        $CanvasSize,
+        $CanvasSize,
+        [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
+    try {
+        $graphics = [System.Drawing.Graphics]::FromImage($carrier)
         try {
-            $source = [System.Drawing.Image]::FromStream($entryStream)
-            try {
-                if ($index -eq 0) {
-                    $sourceWidth = $source.Width
-                    $sourceHeight = $source.Height
-                }
-                elseif ($source.Width -ne $sourceWidth -or $source.Height -ne $sourceHeight) {
-                    throw "Frame dimensions are inconsistent at $($entry.FullName)."
-                }
-
-                if ($sourceWidth -ne 1280 -or $sourceHeight -ne 512) {
-                    throw "Expected 1280x512 source frames, got ${sourceWidth}x${sourceHeight}."
-                }
-
-                $targetWidth = $CanvasSize
-                $targetHeight = [Math]::Max(
-                    1,
-                    [int][Math]::Round(
-                        $CanvasSize * ($sourceHeight / [double]$sourceWidth)))
-                $targetX = 0
-                $targetY = [int][Math]::Floor(($CanvasSize - $targetHeight) / 2.0)
-
-                $carrier = [System.Drawing.Bitmap]::new(
-                    $CanvasSize,
-                    $CanvasSize,
-                    [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
-                try {
-                    $graphics = [System.Drawing.Graphics]::FromImage($carrier)
-                    try {
-                        $graphics.Clear([System.Drawing.Color]::Transparent)
-                        $graphics.CompositingMode =
-                            [System.Drawing.Drawing2D.CompositingMode]::SourceCopy
-                        $graphics.CompositingQuality =
-                            [System.Drawing.Drawing2D.CompositingQuality]::HighQuality
-                        $graphics.InterpolationMode =
-                            [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
-                        $graphics.PixelOffsetMode =
-                            [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
-                        $graphics.DrawImage(
-                            $source,
-                            [System.Drawing.Rectangle]::new(
-                                $targetX,
-                                $targetY,
-                                $targetWidth,
-                                $targetHeight),
-                            0,
-                            0,
-                            $sourceWidth,
-                            $sourceHeight,
-                            [System.Drawing.GraphicsUnit]::Pixel)
-                    }
-                    finally {
-                        $graphics.Dispose()
-                    }
-
-                    $frameName = "mvp_frame_{0:D3}.png" -f ($index + 1)
-                    [void]$expectedNames.Add($frameName)
-                    $outputPath = Join-Path $materialDir $frameName
-                    $memory = [System.IO.MemoryStream]::new()
-                    try {
-                        $carrier.Save(
-                            $memory,
-                            [System.Drawing.Imaging.ImageFormat]::Png)
-                        Save-BytesIfChanged -Bytes $memory.ToArray() -Path $outputPath
-                    }
-                    finally {
-                        $memory.Dispose()
-                    }
-                }
-                finally {
-                    $carrier.Dispose()
-                }
-            }
-            finally {
-                $source.Dispose()
-            }
+            $graphics.Clear([System.Drawing.Color]::Transparent)
+            $graphics.CompositingMode =
+                [System.Drawing.Drawing2D.CompositingMode]::SourceCopy
+            $graphics.CompositingQuality =
+                [System.Drawing.Drawing2D.CompositingQuality]::HighQuality
+            $graphics.InterpolationMode =
+                [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
+            $graphics.PixelOffsetMode =
+                [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
+            $graphics.DrawImage(
+                $source,
+                [System.Drawing.Rectangle]::new($targetX, $targetY, $targetWidth, $targetHeight),
+                $minX,
+                $minY,
+                $cropWidth,
+                $cropHeight,
+                [System.Drawing.GraphicsUnit]::Pixel)
         }
         finally {
-            $entryStream.Dispose()
+            $graphics.Dispose()
+        }
+
+        $memory = [System.IO.MemoryStream]::new()
+        try {
+            $carrier.Save($memory, [System.Drawing.Imaging.ImageFormat]::Png)
+            Save-BytesIfChanged `
+                -Bytes $memory.ToArray() `
+                -Path (Join-Path $materialDir "mvp_emblem.png")
+        }
+        finally {
+            $memory.Dispose()
         }
     }
-
-    foreach ($stale in Get-ChildItem -LiteralPath $materialDir -File -Filter "mvp_frame_*.png") {
-        if (!$expectedNames.Contains($stale.Name)) {
-            Remove-Item -LiteralPath $stale.FullName -Force
-        }
+    finally {
+        $carrier.Dispose()
     }
 }
 finally {
-    $archive.Dispose()
+    $source.Dispose()
 }
-
-$mksLines = [System.Collections.Generic.List[string]]::new()
-$mksLines.Add("sequence 0")
-$mksLines.Add("")
-for ($frame = 1; $frame -le 60; $frame++) {
-    $mksLines.Add(("frame mvp_frame_{0:D3}.png 1" -f $frame))
-}
-$mksLines.Add("")
-Save-TextIfChanged `
-    -Text ($mksLines -join "`n") `
-    -Path (Join-Path $materialDir "mvp_animation_60f.mks")
 
 $vtexTemplate = Get-Content -Raw -LiteralPath (
-    Join-Path $templateDir "mvp_animation_60f.vtex.tmpl")
+    Join-Path $templateDir "mvp_emblem.vtex.tmpl")
 $vpcfTemplate = Get-Content -Raw -LiteralPath (
-    Join-Path $templateDir "mvp_overlay_60f.vpcf.tmpl")
+    Join-Path $templateDir "mvp_overlay.vpcf.tmpl")
 Save-TextIfChanged `
     -Text $vtexTemplate `
-    -Path (Join-Path $materialDir "mvp_animation_60f.vtex")
+    -Path (Join-Path $materialDir "mvp_emblem.vtex")
 Save-TextIfChanged `
     -Text $vpcfTemplate `
     -Path (Join-Path $particleDir "mvp_overlay.vpcf")
@@ -215,6 +173,8 @@ foreach ($obsolete in @(
         (Join-Path $materialDir "mvp_animation_stage_2.vtex"),
         (Join-Path $materialDir "mvp_animation_stage_3.vtex"),
         (Join-Path $materialDir "mvp_animation_stage_4.vtex"),
+        (Join-Path $materialDir "mvp_animation_60f.mks"),
+        (Join-Path $materialDir "mvp_animation_60f.vtex"),
         (Join-Path $particleDir "mvp_overlay_stage_1.vpcf"),
         (Join-Path $particleDir "mvp_overlay_stage_2.vpcf"),
         (Join-Path $particleDir "mvp_overlay_stage_3.vpcf"),
@@ -223,29 +183,32 @@ foreach ($obsolete in @(
         Remove-Item -LiteralPath $obsolete -Force
     }
 }
+foreach ($staleFrame in Get-ChildItem -LiteralPath $materialDir -File -Filter "mvp_frame_*.png") {
+    Remove-Item -LiteralPath $staleFrame.FullName -Force
+}
 
 $manifest = [ordered]@{
     schemaVersion = 1
-    sourceArchive = [System.IO.Path]::GetFileName($archivePath)
-    sourceSha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $archivePath).Hash.ToLowerInvariant()
+    sourceImage = [System.IO.Path]::GetFileName($sourceImagePath)
+    sourceSha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $sourceImagePath).Hash.ToLowerInvariant()
     sourceFrameWidth = $sourceWidth
     sourceFrameHeight = $sourceHeight
-    frameCount = 60
-    framesPerSecond = 25
+    frameCount = 1
+    framesPerSecond = 0
     durationSeconds = 2.4
     rootCount = 1
-    framesPerRoot = 60
+    framesPerRoot = 1
     rootLifetimeSeconds = 2.4
     carrierWidth = $CanvasSize
     carrierHeight = $CanvasSize
     visibleContentHeight = [int][Math]::Round(
         $CanvasSize * ($sourceHeight / [double]$sourceWidth))
     particles = @("particles/swift_mvp_effect/mvp_overlay.vpcf")
-    textures = @("materials/swift_mvp_effect/mvp_animation_60f.vtex")
+    textures = @("materials/swift_mvp_effect/mvp_emblem.vtex")
 }
 Save-TextIfChanged `
     -Text (($manifest | ConvertTo-Json -Depth 4) + "`n") `
     -Path (Join-Path $projectRoot "resources_src\asset_manifest.json")
 
 Write-Host (
-    "Generated 60 MVP carrier frames (${CanvasSize}x${CanvasSize}) and one 60-frame Source 2 root.")
+    "Generated one transparent MVP emblem carrier (${CanvasSize}x${CanvasSize}) and one client-animated Source 2 root.")
