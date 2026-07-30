@@ -35,4 +35,10 @@ pwsh -NoProfile -File .\tools\generate_assets.ps1
 pwsh -NoProfile -File .\tools\verify.ps1
 dotnet build .\SwiftMvpEffect.csproj
 pwsh -NoProfile -File .\tools\build_source2_assets.ps1
+pwsh -NoProfile -File .\build_and_deploy.ps1 -ForceAssetRebuild
+pwsh -NoProfile -File .\tools\verify_deployment.ps1
+pwsh -NoProfile -File .\tools\uninstall_test_deployment.ps1
 ```
+
+部署流程只允许把 8 个编译 `_c` 文件打进 override VPK。原始 ZIP、PNG、MKS、
+VTEX/VPCF source 不得进入 VPK。客户端和服务器必须挂载同名、同 SHA-256 的 VPK。

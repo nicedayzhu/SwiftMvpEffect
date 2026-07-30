@@ -78,6 +78,47 @@ build/publish/SwiftMvpEffect/
 客户端和服务器都必须挂载同一份已编译资源。资源或 VPK 更新后要同时重启客户端与
 服务器；只热重载 DLL 不会刷新客户端缓存的 VTEX/VPCF。
 
+### 一键 override 测试部署
+
+默认路径与当前 Swift Particle Menu 测试环境一致：
+
+```powershell
+pwsh -NoProfile -ExecutionPolicy Bypass `
+  -File .\build_and_deploy.ps1 `
+  -ForceAssetRebuild
+```
+
+脚本依次执行：
+
+1. 离线资源与 C# 验证。
+2. 发布 `SwiftMvpEffect.dll` 与配置。
+3. 编译 4 个 VTEX_C 和 4 个 VPCF_C。
+4. 只把上述 8 个 `_c` 文件打包为 `swift_mvp_effect.vpk`。
+5. 校验 VPK checksums，并解包核对文件清单。
+6. 安装相同 VPK 到客户端和专用服务器。
+7. 备份并修改两端 `gameinfo.gi` SearchPaths。
+8. 部署 SwiftlyS2 插件，并比较 VPK、DLL、配置的 SHA-256。
+
+部署完成后完整重启客户端和服务器，然后在游戏控制台执行：
+
+```text
+swift_mvp_test
+```
+
+只复核现有部署，不重建：
+
+```powershell
+pwsh -NoProfile -File .\tools\verify_deployment.ps1
+```
+
+移除测试挂载、两端 VPK 与服务器插件：
+
+```powershell
+pwsh -NoProfile -File .\tools\uninstall_test_deployment.ps1
+```
+
+卸载脚本只删除该项目的精确路径，修改 `gameinfo.gi` 前仍会生成时间戳备份。
+
 ## 架构来源
 
 - `bj`：序列图、屏幕 overlay、CP assignment 和 Start 前配置

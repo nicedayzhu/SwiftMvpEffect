@@ -27,6 +27,21 @@ $projectRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
 $materialDir = Join-Path $projectRoot "resources_src\materials\swift_mvp_effect"
 $particleDir = Join-Path $projectRoot "resources_src\particles\swift_mvp_effect"
 
+$scriptFiles = @(
+    Get-ChildItem -LiteralPath $projectRoot -Recurse -File -Filter "*.ps1")
+foreach ($scriptFile in $scriptFiles) {
+    $parseTokens = $null
+    $parseErrors = $null
+    [System.Management.Automation.Language.Parser]::ParseFile(
+        $scriptFile.FullName,
+        [ref]$parseTokens,
+        [ref]$parseErrors) | Out-Null
+    if ($parseErrors.Count -gt 0) {
+        $messages = $parseErrors.Message -join "; "
+        throw "PowerShell parse failed for $($scriptFile.FullName): $messages"
+    }
+}
+
 & (Join-Path $PSScriptRoot "generate_assets.ps1")
 
 $frames = @(Get-ChildItem -LiteralPath $materialDir -File -Filter "mvp_frame_*.png")
