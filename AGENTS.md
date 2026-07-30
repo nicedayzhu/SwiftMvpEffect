@@ -20,6 +20,8 @@ SwiftlyS2 回合 MVP 屏幕粒子插件。运行时使用 owner-only
 ## 关键契约
 
 - 素材固定为 60 帧、25 FPS、2.4 秒，拆成 4 个 15 帧阶段。
+- 每个动画 renderer 必须同时设置 `m_bAnimateInFPS = true` 和
+  `m_flAnimationRate = 25.000000`；只设置前者会退化为低频跳帧。
 - 原图 1280×512；生成器等比放入 512×512 透明 carrier，避免 overlay 拉伸。
 - 四个阶段的 `m_flDepthSortBias` 固定为 `0/-1/-2/-3`；后续阶段位于前方。
 - 每个观看者预建四个短生命周期实体，并对其他玩家显式关闭 transmit。

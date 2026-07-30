@@ -98,6 +98,8 @@ for ($stage = 1; $stage -le 4; $stage++) {
         "Stage $stage VPCF fits animation to lifetime" =
             $vpcf.Contains(
                 'm_nAnimationType = "ANIMATION_TYPE_FIT_LIFETIME"')
+        "Stage $stage VPCF explicitly plays at 25 FPS" =
+            $vpcf.Contains("m_flAnimationRate = 25.000000")
         "Stage $stage VPCF lifetime is 0.64 seconds" =
             $vpcf.Contains("m_flLiteralValue = 0.640000")
         "Stage $stage VPCF uses CP34 only" =

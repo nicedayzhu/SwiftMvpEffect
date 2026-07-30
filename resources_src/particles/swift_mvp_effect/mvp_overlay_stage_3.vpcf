@@ -90,6 +90,7 @@
 			m_nFogType = "PARTICLE_FOG_DISABLED"
 			m_bDisableZBuffering = true
 			m_nAnimationType = "ANIMATION_TYPE_FIT_LIFETIME"
+			m_flAnimationRate = 25.000000
 			m_bAnimateInFPS = true
 			m_flCenterXOffset =
 			{

@@ -170,5 +170,6 @@ Game              csgo
 - `smb`：多实体生命周期与失败清理
 
 MVP 动画本身不需要服务端逐帧更新；每个阶段的 VPCF 使用
-`ANIMATION_TYPE_FIT_LIFETIME` 播放 15 帧，服务端只在 0.6 秒阶段边界启动下一个
-实体。每个实体只用 CP34 的一个网络向量传 scale 与屏幕偏移。
+`ANIMATION_TYPE_FIT_LIFETIME`、`m_bAnimateInFPS=true` 和
+`m_flAnimationRate=25` 播放 15 帧，服务端只在 0.6 秒阶段边界启动下一个实体。
+每个实体只用 CP34 的一个网络向量传 scale 与屏幕偏移。
