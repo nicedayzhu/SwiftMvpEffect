@@ -78,7 +78,37 @@ build/publish/SwiftMvpEffect/
 客户端和服务器都必须挂载同一份已编译资源。资源或 VPK 更新后要同时重启客户端与
 服务器；只热重载 DLL 不会刷新客户端缓存的 VTEX/VPCF。
 
-### 一键 override 测试部署
+### 发布渠道说明（重要）
+
+本项目当前提供的 `gameinfo.gi + overrides/*.vpk` 流程只用于本地开发、测试服联调和
+上线前验收，不是最终面向玩家的正式分发方式。不要要求正式服玩家手工修改
+`gameinfo.gi` 或复制本地 VPK。
+
+| 场景 | 粒子资源交付 | SwiftlyS2 插件交付 |
+|---|---|---|
+| 本地开发/测试服 | `swift_mvp_effect.vpk` 挂载到客户端和服务器的 `overrides` | 由部署脚本复制 DLL 与配置到测试服 |
+| 正式发布 | 将审核后的编译资源作为 CS2 Workshop 内容上传并按 Workshop 项目版本更新 | DLL 与配置仍由服主部署到服务器，不放入 Workshop 资源包 |
+
+正式发布预期流程：
+
+1. 完成素材授权、命名空间和版本检查。
+2. 继续使用本项目的验证与 Source 2 编译流程生成 VTEX_C/VPCF_C。
+3. 制作仅含获准发布资源的 Workshop payload；不得包含原始私有素材、开发脚本、
+   本机路径、服务器配置或 SwiftlyS2 DLL。
+4. 通过 CS2 Workshop Tools/Steam Workshop 创建或更新正式项目，记录 Workshop
+   Item ID、发布版本和变更说明。
+5. 服务器按运营环境配置 Workshop 内容的订阅/下载，同时单独部署
+   `SwiftMvpEffect.dll` 与 `mvp_effect.json`。
+6. 在干净客户端验证 Workshop 下载、资源 precache、MVP 自动触发和双客户端
+   transmit 隔离；资源更新后重启客户端与服务器。
+7. 验收通过后再从测试用 override 环境切换到 Workshop 分发，不把本地
+   `gameinfo.gi` 修改作为正式安装步骤。
+
+当前仓库尚未包含 Workshop 上传脚本和正式 Item ID；这些内容应在确定发布账号、
+Workshop 项目及素材授权后单独补充。现有 VPK 脚本会继续保留，作为快速联调和正式
+发布前的资源验收工具。
+
+### 一键 override 测试部署（仅开发/验收）
 
 默认路径与当前 Swift Particle Menu 测试环境一致：
 

@@ -42,3 +42,8 @@ pwsh -NoProfile -File .\tools\uninstall_test_deployment.ps1
 
 部署流程只允许把 8 个编译 `_c` 文件打进 override VPK。原始 ZIP、PNG、MKS、
 VTEX/VPCF source 不得进入 VPK。客户端和服务器必须挂载同名、同 SHA-256 的 VPK。
+
+override VPK 和 `gameinfo.gi` 修改只用于本地开发、测试服联调及发布前验收。正式资源
+分发必须走 CS2 Workshop；Workshop payload 只包含获准发布的编译资源，SwiftlyS2
+DLL 与配置仍由服主单独部署。正式 Item ID 和上传自动化必须等发布账号、Workshop
+项目及素材授权确定后再补充，不能把测试挂载流程描述为玩家安装方案。
