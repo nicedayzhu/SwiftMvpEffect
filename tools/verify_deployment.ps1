@@ -46,6 +46,11 @@ if (!(Test-GameInfoMount `
         -AddonName $AddonName)) {
     throw "Server gameinfo.gi does not mount $AddonName."
 }
+if (!(Test-GameInfoSwiftlyS2Priority -GameInfoPath $serverGameInfo)) {
+    throw (
+        "Server gameinfo.gi must place 'Game csgo/addons/swiftlys2' " +
+        "before every override VPK.")
+}
 
 Assert-FileHashEqual `
     -ExpectedPath $localVpk `
@@ -74,4 +79,3 @@ Write-Host "Client mount: $clientGameInfo"
 Write-Host "Server mount: $serverGameInfo"
 Write-Host "VPK SHA-256: $vpkHash"
 Write-Host "DLL SHA-256: $dllHash"
-

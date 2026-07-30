@@ -131,3 +131,35 @@ function Test-GameInfoMount {
             Select-Object -First 1)
 }
 
+function Test-GameInfoSwiftlyS2Priority {
+    param([Parameter(Mandatory)][string]$GameInfoPath)
+
+    if (!(Test-Path -LiteralPath $GameInfoPath -PathType Leaf)) {
+        return $false
+    }
+
+    $lines = @(Get-Content -LiteralPath $GameInfoPath)
+    $swiftlyIndexes = @(
+        for ($index = 0; $index -lt $lines.Count; $index++) {
+            if ($lines[$index] -match
+                '^\s*Game\s+csgo/addons/swiftlys2\s*(?://.*)?$') {
+                $index
+            }
+        })
+    if ($swiftlyIndexes.Count -ne 1) {
+        return $false
+    }
+
+    $overrideIndexes = @(
+        for ($index = 0; $index -lt $lines.Count; $index++) {
+            if ($lines[$index] -match
+                '^\s*Game\s+csgo/overrides/[^\s]+\.vpk\s*(?://.*)?$') {
+                $index
+            }
+        })
+    if ($overrideIndexes.Count -eq 0) {
+        return $true
+    }
+
+    return $swiftlyIndexes[0] -lt ($overrideIndexes | Measure-Object -Minimum).Minimum
+}

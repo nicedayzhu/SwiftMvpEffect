@@ -47,3 +47,7 @@ override VPK 和 `gameinfo.gi` 修改只用于本地开发、测试服联调及�
 分发必须走 CS2 Workshop；Workshop payload 只包含获准发布的编译资源，SwiftlyS2
 DLL 与配置仍由服主单独部署。正式 Item ID 和上传自动化必须等发布账号、Workshop
 项目及素材授权确定后再补充，不能把测试挂载流程描述为玩家安装方案。
+
+测试服 `gameinfo.gi` 中，`Game csgo/addons/swiftlys2` 必须位于任意
+`Game csgo/overrides/*.vpk` 之前。部署脚本负责修正并验证此顺序；不能仅检查 MVP
+VPK 是否存在。

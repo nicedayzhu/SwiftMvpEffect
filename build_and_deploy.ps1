@@ -129,6 +129,7 @@ try {
         & ".\tools\install_gameinfo_override.ps1" `
             -Cs2Root $ServerRoot `
             -AddonName $AddonName `
+            -PrioritizeSwiftlyS2 `
             -Action Install
     }
 

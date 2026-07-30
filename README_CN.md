@@ -126,7 +126,9 @@ pwsh -NoProfile -ExecutionPolicy Bypass `
 4. 只把上述 8 个 `_c` 文件打包为 `swift_mvp_effect.vpk`。
 5. 校验 VPK checksums，并解包核对文件清单。
 6. 安装相同 VPK 到客户端和专用服务器。
-7. 备份并修改两端 `gameinfo.gi` SearchPaths。
+7. 备份并修改两端 `gameinfo.gi` SearchPaths；服务器会把
+   `Game csgo/addons/swiftlys2` 固定在所有 override VPK 之前，避免 SwiftlyS2
+   的服务器资源路径被测试包抢占。
 8. 部署 SwiftlyS2 插件，并比较 VPK、DLL、配置的 SHA-256。
 
 部署完成后完整重启客户端和服务器，然后在游戏控制台执行：
@@ -148,6 +150,18 @@ pwsh -NoProfile -File .\tools\uninstall_test_deployment.ps1
 ```
 
 卸载脚本只删除该项目的精确路径，修改 `gameinfo.gi` 前仍会生成时间戳备份。
+
+服务器的 SearchPaths 需要保持如下优先级（其他已有 override 包可继续保留）：
+
+```text
+Game_LowViolence  csgo_lv
+Game              csgo/addons/swiftlys2
+Game              csgo/overrides/<existing-test-pack>.vpk
+Game              csgo/overrides/swift_mvp_effect.vpk
+Game              csgo
+```
+
+部署验证会拒绝 `csgo/addons/swiftlys2` 位于任意 override VPK 之后的服务器配置。
 
 ## 架构来源
 
