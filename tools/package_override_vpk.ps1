@@ -96,8 +96,8 @@ try {
     Write-Host "Packing the eight compiled MVP resources..."
     & $VpkEditCli `
         --no-progress `
+        --version 2 `
         --single-file `
-        --gen-md5-entries `
         --output $tempVpk `
         $stageRoot
     if ($LASTEXITCODE -ne 0) {
@@ -108,6 +108,7 @@ try {
     if ($LASTEXITCODE -ne 0) {
         throw "VPK checksum verification failed with exit code $LASTEXITCODE."
     }
+    Assert-Cs2InlineVpkLayout -Path $tempVpk
 
     & $VpkEditCli `
         --no-progress `
@@ -138,6 +139,7 @@ try {
         -ExpectedPath $tempVpk `
         -ActualPath $outputFullPath `
         -Description "Local override VPK"
+    Assert-Cs2InlineVpkLayout -Path $outputFullPath
 
     $result = Get-Item -LiteralPath $outputFullPath
     $hash = (

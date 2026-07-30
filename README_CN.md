@@ -124,7 +124,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass `
 2. 发布 `SwiftMvpEffect.dll` 与配置。
 3. 编译 4 个 VTEX_C 和 4 个 VPCF_C。
 4. 只把上述 8 个 `_c` 文件打包为 `swift_mvp_effect.vpk`。
-5. 校验 VPK checksums，并解包核对文件清单。
+5. 校验 VPK checksums、CS2 v2 单文件容器头（无 archive-MD5 chunk 区段），并解包核对文件清单。
 6. 安装相同 VPK 到客户端和专用服务器。
 7. 备份并修改两端 `gameinfo.gi` SearchPaths；服务器会把
    `Game csgo/addons/swiftlys2` 固定在所有 override VPK 之前，避免 SwiftlyS2

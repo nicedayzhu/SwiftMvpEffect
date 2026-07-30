@@ -66,6 +66,7 @@ Assert-FileHashEqual `
     -Description "Published/server plugin config"
 
 foreach ($vpk in @($localVpk, $serverVpk)) {
+    Assert-Cs2InlineVpkLayout -Path $vpk
     & $VpkEditCli --verify-checksums all $vpk
     if ($LASTEXITCODE -ne 0) {
         throw "VPK checksum verification failed: $vpk"

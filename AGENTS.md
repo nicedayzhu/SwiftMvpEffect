@@ -42,6 +42,8 @@ pwsh -NoProfile -File .\tools\uninstall_test_deployment.ps1
 
 部署流程只允许把 8 个编译 `_c` 文件打进 override VPK。原始 ZIP、PNG、MKS、
 VTEX/VPCF source 不得进入 VPK。客户端和服务器必须挂载同名、同 SHA-256 的 VPK。
+override VPK 必须是 CS2 可加载的 v2 单文件布局，且不能生成 archive-MD5 chunk 区段；
+`vpkeditcli --gen-md5-entries` 会造成专用服务器启动时出现 `Chunk hash not found`。
 
 override VPK 和 `gameinfo.gi` 修改只用于本地开发、测试服联调及发布前验收。正式资源
 分发必须走 CS2 Workshop；Workshop payload 只包含获准发布的编译资源，SwiftlyS2

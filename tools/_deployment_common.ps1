@@ -111,6 +111,52 @@ function Assert-FileHashEqual {
     }
 }
 
+function Get-VpkV2Header {
+    param([Parameter(Mandatory)][string]$Path)
+
+    Assert-PathExists -Path $Path -Description "VPK"
+    $stream = [System.IO.File]::OpenRead($Path)
+    try {
+        $reader = [System.IO.BinaryReader]::new($stream)
+        if ($stream.Length -lt 28) {
+            throw "VPK is too short to contain a v2 header: $Path"
+        }
+        $header = [pscustomobject]@{
+            Magic = $reader.ReadUInt32()
+            Version = $reader.ReadUInt32()
+            TreeSize = $reader.ReadUInt32()
+            FileDataSectionSize = $reader.ReadUInt32()
+            ArchiveMd5SectionSize = $reader.ReadUInt32()
+            OtherMd5SectionSize = $reader.ReadUInt32()
+            SignatureSectionSize = $reader.ReadUInt32()
+        }
+    }
+    finally {
+        $stream.Dispose()
+    }
+    return $header
+}
+
+function Assert-Cs2InlineVpkLayout {
+    param([Parameter(Mandatory)][string]$Path)
+
+    $header = Get-VpkV2Header -Path $Path
+    if ($header.Magic -ne [uint32]0x55AA1234) {
+        throw "Unexpected VPK signature: $Path"
+    }
+    if ($header.Version -ne 2) {
+        throw "CS2 override VPK must use VPK v2: $Path"
+    }
+    if ($header.FileDataSectionSize -eq 0) {
+        throw "CS2 override VPK must store its files inline: $Path"
+    }
+    if ($header.ArchiveMd5SectionSize -ne 0) {
+        throw (
+            "CS2 override VPK must not contain an archive-MD5 chunk section: " +
+            "$Path")
+    }
+}
+
 function Test-GameInfoMount {
     param(
         [Parameter(Mandatory)][string]$GameInfoPath,
