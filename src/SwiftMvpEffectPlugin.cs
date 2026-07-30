@@ -1,0 +1,533 @@
+using System.Text.Json;
+using Microsoft.Extensions.Logging;
+using SwiftlyS2.Shared;
+using SwiftlyS2.Shared.Commands;
+using SwiftlyS2.Shared.EntitySystem;
+using SwiftlyS2.Shared.Events;
+using SwiftlyS2.Shared.GameEventDefinitions;
+using SwiftlyS2.Shared.GameEvents;
+using SwiftlyS2.Shared.Misc;
+using SwiftlyS2.Shared.Natives;
+using SwiftlyS2.Shared.Players;
+using SwiftlyS2.Shared.Plugins;
+using SwiftlyS2.Shared.SchemaDefinitions;
+
+namespace SwiftMvpEffect;
+
+[PluginMetadata(
+    Id = "swift_mvp_effect",
+    Version = "0.1.0",
+    Name = "Swift MVP Effect",
+    Author = "SkinTools",
+    Description = "Plays a screen-locked animated particle banner when round_mvp fires.",
+    MinimumAPIVersion = "1.1.0"
+)]
+public sealed class SwiftMvpEffectPlugin(ISwiftlyCore core) : BasePlugin(core)
+{
+    private const string ConfigFileName = "mvp_effect.json";
+    private const int AnimationStageCount = 4;
+    private const float StageIntervalSeconds = 0.6f;
+    private const float AnimationSeconds = 2.4f;
+    private const float EntityStopGraceSeconds = 0.35f;
+
+    private static readonly string[] EffectParticles =
+    [
+        "particles/swift_mvp_effect/mvp_overlay_stage_1.vpcf",
+        "particles/swift_mvp_effect/mvp_overlay_stage_2.vpcf",
+        "particles/swift_mvp_effect/mvp_overlay_stage_3.vpcf",
+        "particles/swift_mvp_effect/mvp_overlay_stage_4.vpcf"
+    ];
+
+    private readonly Dictionary<int, MvpEffectSession> activeEffects = [];
+    private readonly HashSet<CHandle<CParticleSystem>> pendingRemovals = [];
+    private MvpEffectConfig config = MvpEffectConfig.Default;
+
+    private ILogger<SwiftMvpEffectPlugin> Logger =>
+        Core.LoggerFactory.CreateLogger<SwiftMvpEffectPlugin>();
+
+    public override void Load(bool hotReload)
+    {
+        config = LoadConfiguration();
+        Core.Event.OnPrecacheResource += OnPrecacheResource;
+        Core.Event.OnClientConnected += OnClientConnected;
+        Core.Event.OnClientDisconnected += OnClientDisconnected;
+
+        Logger.LogInformation(
+            "SwiftMvpEffect loaded: enabled={Enabled}, audience={Audience}, " +
+            "scale={Scale:F2}, offset=({OffsetX:F2},{OffsetY:F2}), asset=clean-gold-operator-60f.",
+            config.Enabled,
+            config.Audience,
+            config.Scale,
+            config.OffsetX,
+            config.OffsetY);
+    }
+
+    public override void Unload()
+    {
+        Core.Event.OnPrecacheResource -= OnPrecacheResource;
+        Core.Event.OnClientConnected -= OnClientConnected;
+        Core.Event.OnClientDisconnected -= OnClientDisconnected;
+        CloseAllEffects("unload");
+        FlushPendingRemovals("unload");
+    }
+
+    private void OnPrecacheResource(IOnPrecacheResourceEvent @event)
+    {
+        foreach (var particle in EffectParticles)
+            @event.AddItem(particle);
+
+        Logger.LogInformation(
+            "SwiftMvpEffect precached {Count} staged particle resources.",
+            EffectParticles.Length);
+    }
+
+    private void OnClientDisconnected(IOnClientDisconnectedEvent @event)
+    {
+        CloseEffect(@event.PlayerId, "client-disconnected");
+    }
+
+    private void OnClientConnected(IOnClientConnectedEvent @event)
+    {
+        foreach (var session in activeEffects.Values)
+        {
+            var visible = session.Slot == @event.PlayerId;
+            foreach (var handle in session.Particles)
+            {
+                if (handle.IsValid && handle.Value?.IsValidEntity == true)
+                    handle.Value.SetTransmitState(visible, @event.PlayerId);
+            }
+        }
+    }
+
+    [GameEventHandler(HookMode.Post)]
+    public HookResult OnRoundMvp(EventRoundMvp @event)
+    {
+        if (!config.Enabled)
+            return HookResult.Continue;
+
+        var mvpPlayer = @event.UserIdPlayer;
+        var targetSlots = ResolveAudience(mvpPlayer)
+            .Select(player => player.Slot)
+            .Distinct()
+            .ToArray();
+
+        var spawned = 0;
+        foreach (var slot in targetSlots)
+        {
+            if (TryPlayForSlot(slot, "round-mvp"))
+                spawned++;
+        }
+
+        Logger.LogInformation(
+            "MVP_EFFECT_TRIGGER mvpSlot={MvpSlot} reason={Reason} value={Value} " +
+            "audience={Audience} targets={TargetCount} spawned={SpawnedCount}.",
+            mvpPlayer?.Slot ?? -1,
+            @event.Reason,
+            @event.Value,
+            config.Audience,
+            targetSlots.Length,
+            spawned);
+
+        return HookResult.Continue;
+    }
+
+    [GameEventHandler(HookMode.Pre)]
+    public HookResult OnRoundPrestart(EventRoundPrestart @event)
+    {
+        CloseAllEffects("round-prestart");
+        return HookResult.Continue;
+    }
+
+    [Command(
+        "swift_mvp_test",
+        registerRaw: true,
+        helpText: "Play the MVP animation for the command sender.")]
+    public void TestMvpEffect(ICommandContext context)
+    {
+        var player = context.Sender;
+        if (player?.IsValid != true)
+        {
+            context.Reply("[SwiftMVP] This command must be run by an in-game player.");
+            return;
+        }
+
+        if (!TryPlayForSlot(player.Slot, "test-command"))
+        {
+            context.Reply("[SwiftMVP] Failed to create the MVP particle. Check the server log.");
+            return;
+        }
+
+        context.Reply("[SwiftMVP] Playing the 60-frame MVP animation.");
+    }
+
+    private IEnumerable<IPlayer> ResolveAudience(IPlayer? mvpPlayer)
+    {
+        if (config.Audience.Equals("mvp", StringComparison.OrdinalIgnoreCase))
+        {
+            if (mvpPlayer?.IsValid == true)
+                yield return mvpPlayer;
+            yield break;
+        }
+
+        foreach (var player in Core.PlayerManager.GetAllPlayers())
+        {
+            if (player?.IsValid == true)
+                yield return player;
+        }
+    }
+
+    private bool TryPlayForSlot(int slot, string reason)
+    {
+        var owner = Core.PlayerManager.GetPlayer(slot);
+        if (owner?.IsValid != true)
+            return false;
+
+        CloseEffect(slot, $"replace:{reason}");
+
+        var handles = new List<CHandle<CParticleSystem>>(AnimationStageCount);
+        CParticleSystem? pendingParticle = null;
+        try
+        {
+            foreach (var effectName in EffectParticles)
+            {
+                pendingParticle = CreateConfiguredParticle(slot, effectName);
+                handles.Add(Core.EntitySystem.GetRefEHandle(pendingParticle));
+                pendingParticle = null;
+            }
+
+            var session = new MvpEffectSession(slot, [.. handles]);
+            activeEffects[slot] = session;
+            StartStage(session, 0, reason);
+            for (var stage = 1; stage < AnimationStageCount; stage++)
+            {
+                var scheduledStage = stage;
+                Core.Scheduler.DelayBySeconds(
+                    scheduledStage * StageIntervalSeconds,
+                    () => StartStage(session, scheduledStage, reason));
+            }
+            ScheduleNaturalRemoval(session, reason);
+
+            Logger.LogInformation(
+                "MVP_EFFECT_SPAWN slot={Slot} entities={EntityIndexes} reason={Reason} " +
+                "cp34=({Scale:F2},{OffsetX:F2},{OffsetY:F2}).",
+                slot,
+                string.Join(
+                    ",",
+                    handles
+                        .Where(handle => handle.IsValid)
+                        .Select(handle => (long?)handle.Value?.Index ?? -1L)),
+                reason,
+                config.Scale,
+                config.OffsetX,
+                config.OffsetY);
+            return true;
+        }
+        catch (Exception exception)
+        {
+            Logger.LogError(
+                exception,
+                "Failed to spawn MVP particle for slot {Slot}; reason={Reason}.",
+                slot,
+                reason);
+            DespawnImmediately(pendingParticle, $"spawn-error:{reason}");
+            foreach (var handle in handles)
+            {
+                if (handle.IsValid)
+                    DespawnImmediately(handle.Value, $"spawn-rollback:{reason}");
+            }
+            return false;
+        }
+    }
+
+    private CParticleSystem CreateConfiguredParticle(
+        int ownerSlot,
+        string effectName)
+    {
+        using var keyValues = new CEntityKeyValues();
+        keyValues.SetString("effect_name", effectName);
+        keyValues.SetBool("start_active", false);
+        keyValues.SetInt32("flag_as_weather", 0);
+        keyValues.SetVector("origin", Vector.Zero);
+
+        var particle = Core.EntitySystem.CreateEntityByDesignerName<CParticleSystem>(
+            "info_particle_system")
+            ?? throw new InvalidOperationException(
+                "CreateEntityByDesignerName(info_particle_system) returned null.");
+
+        try
+        {
+            particle.DispatchSpawn(keyValues);
+            particle.NoSave = true;
+            particle.NoFreeze = true;
+            particle.NoRamp = true;
+            particle.Active = false;
+            particle.NoSaveUpdated();
+            particle.NoFreezeUpdated();
+            particle.NoRampUpdated();
+            particle.ActiveUpdated();
+
+            foreach (var player in Core.PlayerManager.GetAllPlayers())
+            {
+                if (player?.IsValid == true)
+                    particle.SetTransmitState(
+                        player.Slot == ownerSlot,
+                        player.Slot);
+            }
+
+            // One network slot is enough for every stage:
+            // CP34.x = scale, CP34.y = horizontal offset, CP34.z = vertical offset.
+            particle.ServerControlPointAssignments[0] = 34;
+            particle.ServerControlPoints[0] = new Vector(
+                config.Scale,
+                config.OffsetX,
+                config.OffsetY);
+            particle.ServerControlPointAssignmentsUpdated();
+            particle.ServerControlPointsUpdated();
+            return particle;
+        }
+        catch
+        {
+            DespawnImmediately(particle, "stage-spawn-error");
+            throw;
+        }
+    }
+
+    private void StartStage(
+        MvpEffectSession session,
+        int stage,
+        string reason)
+    {
+        if (!activeEffects.TryGetValue(session.Slot, out var current) ||
+            !ReferenceEquals(current, session) ||
+            stage < 0 ||
+            stage >= session.Particles.Length)
+        {
+            return;
+        }
+
+        var handle = session.Particles[stage];
+        if (!handle.IsValid || handle.Value?.IsValidEntity != true)
+            return;
+
+        var particle = handle.Value;
+        particle.AcceptInput<string>("Start", null);
+        particle.Active = true;
+        particle.ActiveUpdated();
+
+        Logger.LogDebug(
+            "MVP_EFFECT_STAGE slot={Slot} stage={Stage} entity={EntityIndex} reason={Reason}.",
+            session.Slot,
+            stage + 1,
+            particle.Index,
+            reason);
+    }
+
+    private void ScheduleNaturalRemoval(
+        MvpEffectSession session,
+        string reason)
+    {
+        Core.Scheduler.DelayBySeconds(AnimationSeconds + 0.10f, () =>
+        {
+            if (!activeEffects.TryGetValue(session.Slot, out var current) ||
+                !ReferenceEquals(current, session))
+            {
+                return;
+            }
+
+            activeEffects.Remove(session.Slot);
+            BeginRemoval(session, $"animation-complete:{reason}");
+        });
+    }
+
+    private void CloseEffect(int slot, string reason)
+    {
+        if (!activeEffects.Remove(slot, out var session))
+            return;
+
+        BeginRemoval(session, reason);
+    }
+
+    private void CloseAllEffects(string reason)
+    {
+        var effects = activeEffects.Values.ToArray();
+        activeEffects.Clear();
+        foreach (var session in effects)
+            BeginRemoval(session, reason);
+    }
+
+    private void BeginRemoval(
+        MvpEffectSession session,
+        string reason)
+    {
+        foreach (var handle in session.Particles)
+            BeginRemoval(handle, reason);
+    }
+
+    private void BeginRemoval(
+        CHandle<CParticleSystem> handle,
+        string reason)
+    {
+        if (!handle.IsValid)
+            return;
+
+        var particle = handle.Value;
+        if (particle?.IsValidEntity != true)
+            return;
+
+        var entityIndex = particle.Index;
+        pendingRemovals.Add(handle);
+
+        try
+        {
+            particle.AcceptInput<string>("StopPlayEndCap", string.Empty);
+            particle.Active = false;
+            particle.ActiveUpdated();
+        }
+        catch (Exception exception)
+        {
+            Logger.LogDebug(
+                exception,
+                "MVP particle stop failed for entity {EntityIndex}; cleanup will continue.",
+                entityIndex);
+        }
+
+        Core.Scheduler.DelayBySeconds(EntityStopGraceSeconds, () =>
+        {
+            pendingRemovals.Remove(handle);
+            if (!handle.IsValid)
+                return;
+
+            DespawnImmediately(handle.Value, reason);
+        });
+    }
+
+    private void FlushPendingRemovals(string reason)
+    {
+        var pending = pendingRemovals.ToArray();
+        pendingRemovals.Clear();
+        foreach (var handle in pending)
+        {
+            if (handle.IsValid)
+                DespawnImmediately(handle.Value, $"pending-flush:{reason}");
+        }
+    }
+
+    private void DespawnImmediately(
+        CParticleSystem? particle,
+        string reason)
+    {
+        if (particle?.IsValidEntity != true)
+            return;
+
+        var entityIndex = particle.Index;
+        try
+        {
+            particle.AcceptInput<string>("DestroyImmediately", string.Empty);
+            particle.Active = false;
+            particle.ActiveUpdated();
+        }
+        catch (Exception exception)
+        {
+            Logger.LogDebug(
+                exception,
+                "MVP particle DestroyImmediately failed for entity {EntityIndex}; " +
+                "direct despawn will continue.",
+                entityIndex);
+        }
+
+        try
+        {
+            if (particle.IsValidEntity)
+                particle.Despawn();
+
+            Logger.LogInformation(
+                "MVP_EFFECT_REMOVE entity={EntityIndex} reason={Reason}.",
+                entityIndex,
+                reason);
+        }
+        catch (Exception exception)
+        {
+            Logger.LogWarning(
+                exception,
+                "Failed to despawn MVP particle entity {EntityIndex}; reason={Reason}.",
+                entityIndex,
+                reason);
+        }
+    }
+
+    private MvpEffectConfig LoadConfiguration()
+    {
+        var path = Path.Combine(Core.PluginPath, ConfigFileName);
+        if (!File.Exists(path))
+        {
+            Logger.LogWarning(
+                "MVP config was not found at {Path}; using defaults.",
+                path);
+            return MvpEffectConfig.Default;
+        }
+
+        try
+        {
+            var loaded = JsonSerializer.Deserialize<MvpEffectConfig>(
+                File.ReadAllText(path),
+                new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                    AllowTrailingCommas = true,
+                    ReadCommentHandling = JsonCommentHandling.Skip
+                });
+            return MvpEffectConfig.Normalize(loaded);
+        }
+        catch (Exception exception)
+        {
+            Logger.LogWarning(
+                exception,
+                "Failed to load MVP config from {Path}; using defaults.",
+                path);
+            return MvpEffectConfig.Default;
+        }
+    }
+
+    private sealed record MvpEffectConfig(
+        bool Enabled = true,
+        string Audience = "all",
+        float Scale = 0.86f,
+        float OffsetX = 0f,
+        float OffsetY = 0.04f)
+    {
+        public static MvpEffectConfig Default { get; } = new();
+
+        public static MvpEffectConfig Normalize(MvpEffectConfig? value)
+        {
+            value ??= Default;
+            var audience = string.Equals(
+                value.Audience,
+                "mvp",
+                StringComparison.OrdinalIgnoreCase)
+                ? "mvp"
+                : "all";
+
+            return value with
+            {
+                Audience = audience,
+                Scale = float.IsFinite(value.Scale)
+                    ? Math.Clamp(value.Scale, 0.10f, 1.50f)
+                    : Default.Scale,
+                OffsetX = float.IsFinite(value.OffsetX)
+                    ? Math.Clamp(value.OffsetX, -1.0f, 1.0f)
+                    : Default.OffsetX,
+                OffsetY = float.IsFinite(value.OffsetY)
+                    ? Math.Clamp(value.OffsetY, -1.0f, 1.0f)
+                    : Default.OffsetY
+            };
+        }
+    }
+
+    private sealed class MvpEffectSession(
+        int slot,
+        CHandle<CParticleSystem>[] particles)
+    {
+        public int Slot { get; } = slot;
+        public CHandle<CParticleSystem>[] Particles { get; } = particles;
+    }
+}

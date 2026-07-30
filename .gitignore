@@ -1,0 +1,10 @@
+build/
+bin/
+obj/
+.codebase-memory/
+*.user
+*.suo
+*.vpk
+*.vpk.*
+resources_compiled/
+

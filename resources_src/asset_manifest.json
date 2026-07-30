@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "sourceArchive": "clean_gold_operator_mvp_animation_pack_60f.zip",
+  "sourceSha256": "95a0076dbe99e7b109861830ed2070ed58d201dd234ed11dad335b5676827f1c",
+  "sourceFrameWidth": 1280,
+  "sourceFrameHeight": 512,
+  "frameCount": 60,
+  "framesPerSecond": 25,
+  "durationSeconds": 2.4,
+  "stageCount": 4,
+  "framesPerStage": 15,
+  "stageIntervalSeconds": 0.6,
+  "stageLifetimeSeconds": 0.64,
+  "carrierWidth": 512,
+  "carrierHeight": 512,
+  "visibleContentHeight": 205,
+  "particles": [
+    "particles/swift_mvp_effect/mvp_overlay_stage_1.vpcf",
+    "particles/swift_mvp_effect/mvp_overlay_stage_2.vpcf",
+    "particles/swift_mvp_effect/mvp_overlay_stage_3.vpcf",
+    "particles/swift_mvp_effect/mvp_overlay_stage_4.vpcf"
+  ],
+  "textures": [
+    "materials/swift_mvp_effect/mvp_animation_stage_1.vtex",
+    "materials/swift_mvp_effect/mvp_animation_stage_2.vtex",
+    "materials/swift_mvp_effect/mvp_animation_stage_3.vtex",
+    "materials/swift_mvp_effect/mvp_animation_stage_4.vtex"
+  ]
+}
