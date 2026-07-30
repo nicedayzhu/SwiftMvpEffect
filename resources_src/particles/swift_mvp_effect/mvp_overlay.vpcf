@@ -57,6 +57,16 @@
 			m_bLockRot = true
 		},
 		{
+			_class = "C_OP_SetFloat"
+			m_InputValue =
+			{
+				m_nType = "PF_TYPE_CONTROL_POINT_COMPONENT"
+				m_nControlPoint = 17
+				m_nVectorComponent = 0
+			}
+			m_nOutputField = 7
+		},
+		{
 			_class = "C_OP_Decay"
 		},
 	]

@@ -25,7 +25,8 @@ SwiftlyS2 回合 MVP 屏幕粒子插件。运行时使用 owner-only
 - 原图 1280×512；生成器等比放入 512×512 透明 carrier，避免 overlay 拉伸。
 - 单个根的 `m_flDepthSortBias` 固定为 `0`。
 - 每个观看者只创建一个短生命周期实体，并对其他玩家显式关闭 transmit。
-- 根的 CP34：`x=scale`、`y=offsetX`、`z=offsetY`；只占一个网络槽。
+- 根的 CP34：`x=scale`、`y=offsetX`、`z=offsetY`；CP17.x 为 alpha。运行时以每 Tick
+  更新这两个槽，完成右侧滑入、回弹、淡出和右侧滑出。
 - Start 前必须完成 transmit、CP assignment 和 CP value。
 - 断线、回合开始、重复触发、卸载都必须走同一个幂等清理入口。
 - 资源变化后必须重启客户端和服务器；DLL 热重载不会刷新客户端粒子缓存。

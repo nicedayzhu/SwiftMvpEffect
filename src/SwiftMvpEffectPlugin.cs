@@ -27,6 +27,10 @@ public sealed class SwiftMvpEffectPlugin(ISwiftlyCore core) : BasePlugin(core)
     private const string ConfigFileName = "mvp_effect.json";
     private const float AnimationSeconds = 2.4f;
     private const float EntityStopGraceSeconds = 0.35f;
+    private const float EnterMotionSeconds = 0.52f;
+    private const float ExitMotionStartSeconds = 1.62f;
+    private const float ExitMotionSeconds = 0.62f;
+    private const float OffscreenRightOffset = 1.0f;
 
     private const string EffectParticle =
         "particles/swift_mvp_effect/mvp_overlay.vpcf";
@@ -42,6 +46,7 @@ public sealed class SwiftMvpEffectPlugin(ISwiftlyCore core) : BasePlugin(core)
     {
         config = LoadConfiguration();
         Core.Event.OnPrecacheResource += OnPrecacheResource;
+        Core.Event.OnTick += OnTick;
         Core.Event.OnClientConnected += OnClientConnected;
         Core.Event.OnClientDisconnected += OnClientDisconnected;
 
@@ -58,6 +63,7 @@ public sealed class SwiftMvpEffectPlugin(ISwiftlyCore core) : BasePlugin(core)
     public override void Unload()
     {
         Core.Event.OnPrecacheResource -= OnPrecacheResource;
+        Core.Event.OnTick -= OnTick;
         Core.Event.OnClientConnected -= OnClientConnected;
         Core.Event.OnClientDisconnected -= OnClientDisconnected;
         CloseAllEffects("unload");
@@ -183,14 +189,17 @@ public sealed class SwiftMvpEffectPlugin(ISwiftlyCore core) : BasePlugin(core)
             handles.Add(Core.EntitySystem.GetRefEHandle(pendingParticle));
             pendingParticle = null;
 
-            var session = new MvpEffectSession(slot, [.. handles]);
+            var session = new MvpEffectSession(
+                slot,
+                [.. handles],
+                Environment.TickCount64);
             activeEffects[slot] = session;
             StartAnimation(session, reason);
             ScheduleNaturalRemoval(session, reason);
 
             Logger.LogInformation(
                 "MVP_EFFECT_SPAWN slot={Slot} entities={EntityIndexes} reason={Reason} " +
-                "cp34=({Scale:F2},{OffsetX:F2},{OffsetY:F2}).",
+                "cp34=({Scale:F2},{OffsetX:F2},{OffsetY:F2}), motion=right-in-out.",
                 slot,
                 string.Join(
                     ",",
@@ -255,13 +264,16 @@ public sealed class SwiftMvpEffectPlugin(ISwiftlyCore core) : BasePlugin(core)
                         player.Slot);
             }
 
-            // One network slot is enough for the full animation:
+            // CP34 carries the transform for the full animation:
             // CP34.x = scale, CP34.y = horizontal offset, CP34.z = vertical offset.
             particle.ServerControlPointAssignments[0] = 34;
             particle.ServerControlPoints[0] = new Vector(
-                config.Scale,
-                config.OffsetX,
+                Math.Max(config.Scale * 0.72f, 0.001f),
+                OffscreenRightOffset,
                 config.OffsetY);
+            // CP17.x drives particle alpha through C_OP_SetFloat.
+            particle.ServerControlPointAssignments[1] = 17;
+            particle.ServerControlPoints[1] = Vector.Zero;
             particle.ServerControlPointAssignmentsUpdated();
             particle.ServerControlPointsUpdated();
             return particle;
@@ -292,6 +304,7 @@ public sealed class SwiftMvpEffectPlugin(ISwiftlyCore core) : BasePlugin(core)
         particle.AcceptInput<string>("Start", null);
         particle.Active = true;
         particle.ActiveUpdated();
+        ApplyMotionFrame(session, session.StartedAtMs);
 
         Logger.LogDebug(
             "MVP_EFFECT_START slot={Slot} entity={EntityIndex} reason={Reason}.",
@@ -299,6 +312,90 @@ public sealed class SwiftMvpEffectPlugin(ISwiftlyCore core) : BasePlugin(core)
             particle.Index,
             reason);
     }
+
+    private void OnTick()
+    {
+        if (activeEffects.Count == 0)
+            return;
+
+        var now = Environment.TickCount64;
+        foreach (var session in activeEffects.Values.ToArray())
+        {
+            if (activeEffects.TryGetValue(session.Slot, out var current) &&
+                ReferenceEquals(current, session))
+            {
+                ApplyMotionFrame(session, now);
+            }
+        }
+    }
+
+    private void ApplyMotionFrame(MvpEffectSession session, long now)
+    {
+        var handle = session.Particles[0];
+        var particle = handle.IsValid ? handle.Value : null;
+        if (particle?.IsValidEntity != true)
+            return;
+
+        var elapsedSeconds = Math.Max(
+            0f,
+            (float)(now - session.StartedAtMs) / 1000f);
+        var scale = config.Scale;
+        var alpha = 1f;
+        var offsetX = config.OffsetX;
+
+        if (elapsedSeconds < EnterMotionSeconds)
+        {
+            var progress = elapsedSeconds / EnterMotionSeconds;
+            var transformProgress = EaseOutBack(progress);
+            scale = Lerp(config.Scale * 0.72f, config.Scale, transformProgress);
+            alpha = EaseOutCubic(progress);
+            offsetX = Lerp(
+                OffscreenRightOffset,
+                config.OffsetX,
+                transformProgress);
+        }
+        else if (elapsedSeconds >= ExitMotionStartSeconds)
+        {
+            var progress = Math.Clamp(
+                (elapsedSeconds - ExitMotionStartSeconds) / ExitMotionSeconds,
+                0f,
+                1f);
+            var transformProgress = EaseInCubic(progress);
+            scale = Lerp(config.Scale, config.Scale * 0.86f, transformProgress);
+            alpha = 1f - transformProgress;
+            offsetX = Lerp(
+                config.OffsetX,
+                OffscreenRightOffset,
+                transformProgress);
+        }
+
+        particle.ServerControlPoints[0] = new Vector(
+            Math.Max(scale, 0.001f),
+            Math.Clamp(offsetX, -1f, 1f),
+            config.OffsetY);
+        particle.ServerControlPoints[1] = new Vector(
+            Math.Clamp(alpha, 0f, 1f),
+            0f,
+            0f);
+        particle.ServerControlPointsUpdated();
+    }
+
+    private static float EaseOutCubic(float value) =>
+        1f - MathF.Pow(1f - value, 3f);
+
+    private static float EaseInCubic(float value) => value * value * value;
+
+    private static float EaseOutBack(float value)
+    {
+        const float c1 = 1.35f;
+        const float c3 = c1 + 1f;
+        var offset = value - 1f;
+        return 1f + (c3 * offset * offset * offset) +
+            (c1 * offset * offset);
+    }
+
+    private static float Lerp(float from, float to, float amount) =>
+        from + ((to - from) * amount);
 
     private void ScheduleNaturalRemoval(
         MvpEffectSession session,
@@ -469,7 +566,7 @@ public sealed class SwiftMvpEffectPlugin(ISwiftlyCore core) : BasePlugin(core)
     private sealed record MvpEffectConfig(
         bool Enabled = true,
         string Audience = "all",
-        float Scale = 0.86f,
+        float Scale = 0.55f,
         float OffsetX = 0f,
         float OffsetY = 0.04f)
     {
@@ -503,9 +600,11 @@ public sealed class SwiftMvpEffectPlugin(ISwiftlyCore core) : BasePlugin(core)
 
     private sealed class MvpEffectSession(
         int slot,
-        CHandle<CParticleSystem>[] particles)
+        CHandle<CParticleSystem>[] particles,
+        long startedAtMs)
     {
         public int Slot { get; } = slot;
         public CHandle<CParticleSystem>[] Particles { get; } = particles;
+        public long StartedAtMs { get; } = startedAtMs;
     }
 }

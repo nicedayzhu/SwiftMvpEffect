@@ -91,8 +91,11 @@ $checks = [ordered]@{
         $vpcf.Contains("m_flAnimationRate = 25.000000")
     "VPCF lifetime is 2.4 seconds" =
         $vpcf.Contains("m_flLiteralValue = 2.400000")
-    "VPCF uses CP34 only" =
+    "VPCF uses CP34 transform" =
         ([regex]::Matches($vpcf, "m_nControlPoint = 34").Count -eq 3)
+    "VPCF uses CP17 alpha" =
+        (([regex]::Matches($vpcf, "m_nControlPoint = 17").Count -eq 1) -and
+        $vpcf.Contains("m_nOutputField = 7"))
     "VPCF has no unresolved template token" =
         ![regex]::IsMatch($vpcf + $vtex, '\{\{[A-Z0-9_]+\}\}')
 }

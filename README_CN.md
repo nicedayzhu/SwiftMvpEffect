@@ -14,6 +14,7 @@ CS2 发出 `round_mvp` 事件时，插件为目标观看者创建 owner-only
 - `swift_mvp_test` 单人测试命令
 - 单个 60 帧 atlas、VTEX、VPCF 自动生成
 - 1280×512 → 512×512 透明 carrier，保持横幅比例
+- 默认缩小为 `scale=0.55`，并以右侧滑入、回弹、淡出、右侧滑出的过场展示
 - 每名观看者独立 transmit，其他玩家明确不可见
 - 重复触发、断线、下一回合、卸载时幂等清理
 - Source 2 资源编译与严格验证脚本
@@ -26,7 +27,7 @@ CS2 发出 `round_mvp` 事件时，插件为目标观看者创建 owner-only
 {
   "enabled": true,
   "audience": "all",
-  "scale": 0.86,
+  "scale": 0.55,
   "offsetX": 0.0,
   "offsetY": 0.04
 }
@@ -163,7 +164,7 @@ Game              csgo
 - `ptext`：独立会话、连接变化后的 transmit 隔离
 - `smb`：多实体生命周期与失败清理
 
-MVP 动画本身不需要服务端逐帧更新或阶段定时器；单个 VPCF 使用
+MVP 序列帧本身不需要服务端逐帧更新或阶段定时器；单个 VPCF 使用
 `ANIMATION_TYPE_FIT_LIFETIME`、`m_bAnimateInFPS=true` 和
-`m_flAnimationRate=25` 连续播放完整 60 帧。根实体只用 CP34 的一个网络向量传
-scale 与屏幕偏移。
+`m_flAnimationRate=25` 连续播放完整 60 帧。BJ 同款的每 Tick 控制点动画使用 CP34
+传 scale 与屏幕偏移、CP17.x 传 alpha：横幅从右侧滑入中央并回弹，停留后淡出并向右侧滑出。
