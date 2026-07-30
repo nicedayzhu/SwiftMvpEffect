@@ -1,7 +1,8 @@
 # AGENTS.md — SwiftMvpEffect
 
 SwiftlyS2 回合 MVP 屏幕粒子插件。运行时使用 owner-only
-`info_particle_system`，客户端 VPCF 播放透明 MVP 主视觉并以粒子年龄本地驱动运动。
+`info_particle_system`。默认 VPCF 播放透明 MVP 主视觉；独立测试命令可播放保留的
+60 帧 sequence-atlas 金色横幅。两者都以 collection age 在客户端本地驱动运动。
 
 ## 技术栈
 
@@ -13,15 +14,18 @@ SwiftlyS2 回合 MVP 屏幕粒子插件。运行时使用 owner-only
 ## 资源分层
 
 - `assets/source/`：用户提供的原始素材包，禁止生成脚本覆盖。
-- `assets/generated/`：经用户授权生成的透明 MVP 主视觉；生成器以此为输入。
+- `assets/generated/`：经用户授权生成的透明 MVP 主视觉。
 - `tools/templates/`：VTEX/VPCF 结构源。
-- `resources_src/`：由 `tools/generate_assets.ps1` 生成，禁止手改。
+- `resources_src/`：由透明主视觉与 60 帧原始 ZIP 共同生成，禁止手改。
 - `build/`：插件、清单和临时编译列表，不纳入 Git。
 
 ## 关键契约
 
-- 素材为一张透明金色 MVP 主视觉；生成器等比放入 1024×1024 透明 carrier，产出无损
-  `RGBA8888` 1024 纹理，避免黑底、MKS 降采样与大图集首帧卡顿。
+- 默认素材为一张透明金色 MVP 主视觉；生成器等比放入 1024×1024 透明 carrier，
+  产出无损 `RGBA8888` 1024 纹理，避免默认回合效果承担大图集首帧开销。
+- 保留的测试素材由 `clean_gold_operator_mvp_animation_pack_60f.zip` 生成 60 张
+  512×512 carrier、单个 MKS 与无损 4096 atlas；它只由
+  `swift_mvp_test_atlas` 触发，不替换默认 `round_mvp` 效果。
 - 横向移动必须用 `PF_TYPE_COLLECTION_AGE` 在客户端本地推进；不要把
   `PF_TYPE_PARTICLE_AGE_NORMALIZED` 填入 `CParticleCollectionRendererFloatInput`，
   否则客户端会把集合级 renderer 输入退化成静态值。不要以服务器 Tick 反复复制
@@ -48,7 +52,7 @@ pwsh -NoProfile -File .\tools\verify_deployment.ps1
 pwsh -NoProfile -File .\tools\uninstall_test_deployment.ps1
 ```
 
-部署流程只允许把 2 个编译 `_c` 文件打进 override VPK。原始 ZIP、PNG、MKS、
+部署流程只允许把 4 个编译 `_c` 文件打进 override VPK。原始 ZIP、PNG、MKS、
 VTEX/VPCF source 不得进入 VPK。客户端和服务器必须挂载同名、同 SHA-256 的 VPK。
 override VPK 必须是 CS2 可加载的 v2 单文件布局，且不能生成 archive-MD5 chunk 区段；
 `vpkeditcli --gen-md5-entries` 会造成专用服务器启动时出现 `Chunk hash not found`。

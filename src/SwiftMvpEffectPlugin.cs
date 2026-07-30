@@ -30,6 +30,8 @@ public sealed class SwiftMvpEffectPlugin(ISwiftlyCore core) : BasePlugin(core)
 
     private const string EffectParticle =
         "particles/swift_mvp_effect/mvp_overlay.vpcf";
+    private const string AtlasEffectParticle =
+        "particles/swift_mvp_effect/mvp_atlas_overlay.vpcf";
 
     private readonly Dictionary<int, MvpEffectSession> activeEffects = [];
     private readonly HashSet<CHandle<CParticleSystem>> pendingRemovals = [];
@@ -47,7 +49,8 @@ public sealed class SwiftMvpEffectPlugin(ISwiftlyCore core) : BasePlugin(core)
 
         Logger.LogInformation(
             "SwiftMvpEffect loaded: enabled={Enabled}, audience={Audience}, " +
-            "scale={Scale:F2}, offsetY={OffsetY:F2}, asset=transparent-gold-mvp-emblem.",
+            "scale={Scale:F2}, offsetY={OffsetY:F2}, " +
+            "assets=transparent-emblem+optional-60f-atlas.",
             config.Enabled,
             config.Audience,
             config.Scale,
@@ -66,9 +69,10 @@ public sealed class SwiftMvpEffectPlugin(ISwiftlyCore core) : BasePlugin(core)
     private void OnPrecacheResource(IOnPrecacheResourceEvent @event)
     {
         @event.AddItem(EffectParticle);
+        @event.AddItem(AtlasEffectParticle);
 
         Logger.LogInformation(
-            "SwiftMvpEffect precached one client-animated transparent emblem resource.");
+            "SwiftMvpEffect precached the emblem and optional 60-frame atlas resources.");
     }
 
     private void OnClientDisconnected(IOnClientDisconnectedEvent @event)
@@ -150,6 +154,34 @@ public sealed class SwiftMvpEffectPlugin(ISwiftlyCore core) : BasePlugin(core)
         context.Reply("[SwiftMVP] Playing the client-animated MVP flyover.");
     }
 
+    [Command(
+        "swift_mvp_test_atlas",
+        registerRaw: true,
+        helpText: "Play the preserved 60-frame sequence-atlas MVP banner.")]
+    public void TestMvpAtlasEffect(ICommandContext context)
+    {
+        var player = context.Sender;
+        if (player?.IsValid != true)
+        {
+            context.Reply("[SwiftMVP] This command must be run by an in-game player.");
+            return;
+        }
+
+        if (!TryPlayForSlot(
+                player.Slot,
+                AtlasEffectParticle,
+                "sequence-atlas-60f",
+                "atlas-test-command"))
+        {
+            context.Reply(
+                "[SwiftMVP] Failed to create the 60-frame MVP atlas particle. " +
+                "Check the server log.");
+            return;
+        }
+
+        context.Reply("[SwiftMVP] Playing the preserved 60-frame MVP atlas banner.");
+    }
+
     private IEnumerable<IPlayer> ResolveAudience(IPlayer? mvpPlayer)
     {
         if (config.Audience.Equals("mvp", StringComparison.OrdinalIgnoreCase))
@@ -166,7 +198,14 @@ public sealed class SwiftMvpEffectPlugin(ISwiftlyCore core) : BasePlugin(core)
         }
     }
 
-    private bool TryPlayForSlot(int slot, string reason)
+    private bool TryPlayForSlot(int slot, string reason) =>
+        TryPlayForSlot(slot, EffectParticle, "transparent-emblem", reason);
+
+    private bool TryPlayForSlot(
+        int slot,
+        string effectName,
+        string effectKind,
+        string reason)
     {
         var owner = Core.PlayerManager.GetPlayer(slot);
         if (owner?.IsValid != true)
@@ -178,7 +217,7 @@ public sealed class SwiftMvpEffectPlugin(ISwiftlyCore core) : BasePlugin(core)
         CParticleSystem? pendingParticle = null;
         try
         {
-            pendingParticle = CreateConfiguredParticle(slot, EffectParticle);
+            pendingParticle = CreateConfiguredParticle(slot, effectName);
             handles.Add(Core.EntitySystem.GetRefEHandle(pendingParticle));
             pendingParticle = null;
 
@@ -188,7 +227,8 @@ public sealed class SwiftMvpEffectPlugin(ISwiftlyCore core) : BasePlugin(core)
             ScheduleNaturalRemoval(session, reason);
 
             Logger.LogInformation(
-                "MVP_EFFECT_SPAWN slot={Slot} entities={EntityIndexes} reason={Reason} " +
+                "MVP_EFFECT_SPAWN slot={Slot} entities={EntityIndexes} " +
+                "effect={EffectKind} reason={Reason} " +
                 "cp34=({Scale:F2},0,{OffsetY:F2}), " +
                 "motion=client-collection-age-left-in-bounce-hold-right-out.",
                 slot,
@@ -197,6 +237,7 @@ public sealed class SwiftMvpEffectPlugin(ISwiftlyCore core) : BasePlugin(core)
                     handles
                         .Where(handle => handle.IsValid)
                         .Select(handle => (long?)handle.Value?.Index ?? -1L)),
+                effectKind,
                 reason,
                 config.Scale,
                 config.OffsetY);
@@ -206,8 +247,10 @@ public sealed class SwiftMvpEffectPlugin(ISwiftlyCore core) : BasePlugin(core)
         {
             Logger.LogError(
                 exception,
-                "Failed to spawn MVP particle for slot {Slot}; reason={Reason}.",
+                "Failed to spawn MVP particle for slot {Slot}; " +
+                "effect={EffectKind} reason={Reason}.",
                 slot,
+                effectKind,
                 reason);
             DespawnImmediately(pendingParticle, $"spawn-error:{reason}");
             foreach (var handle in handles)

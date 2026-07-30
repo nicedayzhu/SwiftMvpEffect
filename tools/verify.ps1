@@ -45,16 +45,31 @@ foreach ($scriptFile in $scriptFiles) {
 & (Join-Path $PSScriptRoot "generate_assets.ps1")
 
 $emblemPath = Join-Path $materialDir "mvp_emblem.png"
-$vtexPath = Join-Path $materialDir "mvp_emblem.vtex"
-$vpcfPath = Join-Path $particleDir "mvp_overlay.vpcf"
-foreach ($required in @($emblemPath, $vtexPath, $vpcfPath)) {
+$emblemVtexPath = Join-Path $materialDir "mvp_emblem.vtex"
+$emblemVpcfPath = Join-Path $particleDir "mvp_overlay.vpcf"
+$atlasMksPath = Join-Path $materialDir "mvp_animation_60f.mks"
+$atlasVtexPath = Join-Path $materialDir "mvp_animation_60f.vtex"
+$atlasVpcfPath = Join-Path $particleDir "mvp_atlas_overlay.vpcf"
+foreach ($required in @(
+        $emblemPath,
+        $emblemVtexPath,
+        $emblemVpcfPath,
+        $atlasMksPath,
+        $atlasVtexPath,
+        $atlasVpcfPath)) {
     if (!(Test-Path -LiteralPath $required -PathType Leaf)) {
-        throw "Missing transparent MVP emblem resource: $required"
+        throw "Missing MVP resource: $required"
     }
 }
 
-if (@(Get-ChildItem -LiteralPath $materialDir -File -Filter "mvp_frame_*.png").Count -ne 0) {
-    throw "Legacy MVP frame sequences must not remain in the lightweight asset pack."
+$frames = @(
+    Get-ChildItem `
+        -LiteralPath $materialDir `
+        -File `
+        -Filter "mvp_frame_*.png" |
+        Sort-Object Name)
+if ($frames.Count -ne 60) {
+    throw "Expected 60 generated atlas frame PNGs, found $($frames.Count)."
 }
 
 Add-Type -AssemblyName System.Drawing
@@ -72,71 +87,151 @@ finally {
     $emblem.Dispose()
 }
 
-$vtex = Get-Content -Raw -LiteralPath $vtexPath
-$vpcf = Get-Content -Raw -LiteralPath $vpcfPath
+foreach ($frame in $frames) {
+    $atlasFrame = [System.Drawing.Bitmap]::new($frame.FullName)
+    try {
+        if ($atlasFrame.Width -ne 512 -or $atlasFrame.Height -ne 512) {
+            throw (
+                "Expected a 512x512 atlas carrier, got " +
+                "$($atlasFrame.Width)x$($atlasFrame.Height): $($frame.Name)")
+        }
+        if ($atlasFrame.GetPixel(0, 0).A -ne 0 -or
+            $atlasFrame.GetPixel(
+                $atlasFrame.Width - 1,
+                $atlasFrame.Height - 1).A -ne 0) {
+            throw "Atlas carrier corners must be transparent: $($frame.Name)"
+        }
+    }
+    finally {
+        $atlasFrame.Dispose()
+    }
+}
+
+$atlasMks = Get-Content -Raw -LiteralPath $atlasMksPath
+$mksMatches = [regex]::Matches(
+    $atlasMks,
+    '(?m)^frame (mvp_frame_[0-9]{3}\.png) 1$')
+$mksFrameNames = @(
+    $mksMatches | ForEach-Object { $_.Groups[1].Value })
+if ($mksMatches.Count -ne 60 -or
+    @($mksFrameNames | Sort-Object -Unique).Count -ne 60) {
+    throw "The atlas MKS must reference all 60 frames exactly once."
+}
+
+$emblemVtex = Get-Content -Raw -LiteralPath $emblemVtexPath
+$emblemVpcf = Get-Content -Raw -LiteralPath $emblemVpcfPath
+$atlasVtex = Get-Content -Raw -LiteralPath $atlasVtexPath
+$atlasVpcf = Get-Content -Raw -LiteralPath $atlasVpcfPath
 $assetManifest = Get-Content -Raw -LiteralPath (
     Join-Path $projectRoot "resources_src\asset_manifest.json") |
     ConvertFrom-Json
-$rendererCount = [regex]::Matches(
-    $vpcf,
+$emblemRendererCount = [regex]::Matches(
+    $emblemVpcf,
     '_class = "C_OP_RenderSprites"').Count
-$collectionAgeCount = [regex]::Matches(
-    $vpcf,
+$emblemCollectionAgeCount = [regex]::Matches(
+    $emblemVpcf,
     'm_nType = "PF_TYPE_COLLECTION_AGE"').Count
+$atlasRendererCount = [regex]::Matches(
+    $atlasVpcf,
+    '_class = "C_OP_RenderSprites"').Count
+$atlasCollectionAgeCount = [regex]::Matches(
+    $atlasVpcf,
+    'm_nType = "PF_TYPE_COLLECTION_AGE"').Count
+$pluginSource = Get-Content -Raw -LiteralPath (
+    Join-Path $projectRoot "src\SwiftMvpEffectPlugin.cs")
 $checks = [ordered]@{
-    "VTEX references the transparent emblem" =
-        $vtex.Contains("materials/swift_mvp_effect/mvp_emblem.png")
-    "VTEX preserves alpha without block compression" =
-        $vtex.Contains('"m_outputFormat" "string" "RGBA8888"')
-    "VTEX is a lightweight 1024 texture" =
-        ($vtex.Contains('"m_nOutputMinDimension" "int" "1024"') -and
-        $vtex.Contains('"m_nOutputMaxDimension" "int" "1024"'))
-    "VTEX disables LOD" =
-        $vtex.Contains('"m_bNoLod" "bool" "1"')
-    "VPCF has overlay renderer" =
-        $vpcf.Contains("m_bOnlyRenderInEffecsGameOverlay = true")
-    "VPCF disables Z buffer" =
-        $vpcf.Contains("m_bDisableZBuffering = true")
-    "VPCF has explicit depth sort" =
-        $vpcf.Contains("m_flDepthSortBias = 0.000000")
-    "VPCF lifetime is 2.4 seconds" =
-        $vpcf.Contains("m_flLiteralValue = 2.400000")
-    "VPCF is a static sprite" =
-        $vpcf.Contains('m_nAnimationType = "ANIMATION_TYPE_MANUAL_FRAMES"')
-    "VPCF uses thirteen contiguous client motion segments" =
-        ($rendererCount -eq 13 -and
+    "Emblem VTEX references the transparent source" =
+        $emblemVtex.Contains("materials/swift_mvp_effect/mvp_emblem.png")
+    "Emblem VTEX is lossless 1024 RGBA with LOD disabled" =
+        ($emblemVtex.Contains('"m_outputFormat" "string" "RGBA8888"') -and
+        $emblemVtex.Contains('"m_nOutputMinDimension" "int" "1024"') -and
+        $emblemVtex.Contains('"m_nOutputMaxDimension" "int" "1024"') -and
+        $emblemVtex.Contains('"m_bNoLod" "bool" "1"'))
+    "Atlas VTEX references the 60-frame MKS" =
+        $atlasVtex.Contains(
+            "materials/swift_mvp_effect/mvp_animation_60f.mks")
+    "Atlas VTEX is lossless 4096 RGBA with LOD disabled" =
+        ($atlasVtex.Contains('"m_outputFormat" "string" "RGBA8888"') -and
+        $atlasVtex.Contains('"m_nOutputMinDimension" "int" "4096"') -and
+        $atlasVtex.Contains('"m_nOutputMaxDimension" "int" "4096"') -and
+        $atlasVtex.Contains('"m_bNoLod" "bool" "1"'))
+    "Both VPCFs use overlay rendering without Z buffer" =
+        ($emblemVpcf.Contains("m_bOnlyRenderInEffecsGameOverlay = true") -and
+        $atlasVpcf.Contains("m_bOnlyRenderInEffecsGameOverlay = true") -and
+        $emblemVpcf.Contains("m_bDisableZBuffering = true") -and
+        $atlasVpcf.Contains("m_bDisableZBuffering = true"))
+    "Both VPCFs have explicit depth sort and 2.4 second lifetime" =
+        ($emblemVpcf.Contains("m_flDepthSortBias = 0.000000") -and
+        $atlasVpcf.Contains("m_flDepthSortBias = 0.000000") -and
+        $emblemVpcf.Contains("m_flLiteralValue = 2.400000") -and
+        $atlasVpcf.Contains("m_flLiteralValue = 2.400000"))
+    "Emblem VPCF uses manual static frames" =
+        $emblemVpcf.Contains(
+            'm_nAnimationType = "ANIMATION_TYPE_MANUAL_FRAMES"')
+    "Atlas VPCF fits the 60-frame sequence to lifetime at 25 FPS" =
+        ($atlasVpcf.Contains(
+            'm_nAnimationType = "ANIMATION_TYPE_FIT_LIFETIME"') -and
+        $atlasVpcf.Contains("m_flAnimationRate = 25.000000") -and
+        $atlasVpcf.Contains("m_bAnimateInFPS = true"))
+    "Both VPCFs use thirteen contiguous client motion segments" =
+        ($emblemRendererCount -eq 13 -and
+        $atlasRendererCount -eq 13 -and
         $assetManifest.motionSegmentCount -eq 13)
-    "VPCF uses collection age for every motion field" =
-        ($collectionAgeCount -eq ($rendererCount * 3) -and
+    "Both VPCFs use collection age for every motion field" =
+        ($emblemCollectionAgeCount -eq ($emblemRendererCount * 3) -and
+        $atlasCollectionAgeCount -eq ($atlasRendererCount * 3) -and
         $assetManifest.motionClock -eq "PF_TYPE_COLLECTION_AGE")
-    "VPCF never feeds particle age to collection renderer fields" =
-        !$vpcf.Contains("PF_TYPE_PARTICLE_AGE")
-    "VPCF enters from the left and exits to the right" =
-        ($vpcf.Contains("m_flOutput0 = -1.120000") -and
-        $vpcf.Contains("m_flOutput1 = 1.120000"))
-    "VPCF has a positional overshoot and rebound" =
-        ($vpcf.Contains("m_flOutput1 = 0.074000") -and
-        $vpcf.Contains("m_flOutput0 = 0.074000") -and
-        $vpcf.Contains("m_flOutput1 = 0.045000"))
-    "VPCF locally scales the entry bounce and exit shrink" =
-        ($vpcf.Contains("m_flOutput0 = 0.720000") -and
-        $vpcf.Contains("m_flOutput1 = 1.019000") -and
-        $vpcf.Contains("m_flOutput1 = 0.860000"))
-    "VPCF holds at center from 0.52 to 1.62 seconds" =
-        ($vpcf.Contains("m_flInput0 = 0.520000") -and
-        $vpcf.Contains("m_flInput1 = 1.620000") -and
+    "Neither VPCF feeds particle age to collection renderer fields" =
+        (!$emblemVpcf.Contains("PF_TYPE_PARTICLE_AGE") -and
+        !$atlasVpcf.Contains("PF_TYPE_PARTICLE_AGE"))
+    "Both VPCFs enter left, overshoot, hold, and exit right" =
+        ($emblemVpcf.Contains("m_flOutput0 = -1.120000") -and
+        $atlasVpcf.Contains("m_flOutput0 = -1.120000") -and
+        $emblemVpcf.Contains("m_flOutput1 = 1.120000") -and
+        $atlasVpcf.Contains("m_flOutput1 = 1.120000") -and
+        $emblemVpcf.Contains("m_flOutput1 = 0.074000") -and
+        $atlasVpcf.Contains("m_flOutput1 = 0.074000") -and
+        $emblemVpcf.Contains("m_flInput0 = 0.520000") -and
+        $atlasVpcf.Contains("m_flInput0 = 0.520000") -and
+        $emblemVpcf.Contains("m_flInput1 = 1.620000") -and
+        $atlasVpcf.Contains("m_flInput1 = 1.620000") -and
         $assetManifest.enterEndSeconds -eq 0.52 -and
         $assetManifest.centerHoldEndSeconds -eq 1.62)
-    "VPCF fades locally" =
-        ($vpcf.Contains('"C_OP_FadeInSimple"') -and
-        $vpcf.Contains('"C_OP_FadeOutSimple"'))
-    "VPCF uses CP34 only for fixed layout" =
-        ([regex]::Matches($vpcf, "m_nControlPoint = 34").Count -eq
-        ($rendererCount * 3))
-    "VPCF has no runtime alpha control point" =
-        ([regex]::Matches($vpcf, "m_nControlPoint = 17").Count -eq 0)
-    "VPCF has no unresolved template token" =
-        ![regex]::IsMatch($vpcf + $vtex, '\{\{[A-Z0-9_]+\}\}')
+    "Both VPCFs fade locally" =
+        ($emblemVpcf.Contains('"C_OP_FadeInSimple"') -and
+        $emblemVpcf.Contains('"C_OP_FadeOutSimple"') -and
+        $atlasVpcf.Contains('"C_OP_FadeInSimple"') -and
+        $atlasVpcf.Contains('"C_OP_FadeOutSimple"'))
+    "Both VPCFs use CP34 only for fixed layout" =
+        (([regex]::Matches(
+            $emblemVpcf,
+            "m_nControlPoint = 34").Count -eq
+            ($emblemRendererCount * 3)) -and
+        ([regex]::Matches(
+            $atlasVpcf,
+            "m_nControlPoint = 34").Count -eq
+            ($atlasRendererCount * 3)))
+    "Both VPCFs have no runtime sequence or alpha CP" =
+        (([regex]::Matches(
+            $emblemVpcf,
+            "m_nControlPoint = 17").Count -eq 0) -and
+        ([regex]::Matches(
+            $atlasVpcf,
+            "m_nControlPoint = 17").Count -eq 0))
+    "Generated resources have no unresolved template token" =
+        ![regex]::IsMatch(
+            $emblemVpcf + $atlasVpcf + $emblemVtex + $atlasVtex,
+            '\{\{[A-Z0-9_]+\}\}')
+    "Manifest preserves both runtime variants" =
+        ($assetManifest.atlasFrameCount -eq 60 -and
+        $assetManifest.atlasFramesPerSecond -eq 25 -and
+        @($assetManifest.particles).Count -eq 2 -and
+        @($assetManifest.textures).Count -eq 2)
+    "Plugin exposes and precaches the atlas test effect" =
+        ($pluginSource.Contains('"swift_mvp_test_atlas"') -and
+        $pluginSource.Contains(
+            '"particles/swift_mvp_effect/mvp_atlas_overlay.vpcf"') -and
+        $pluginSource.Contains("@event.AddItem(AtlasEffectParticle)"))
 }
 foreach ($entry in $checks.GetEnumerator()) {
     if (!$entry.Value) {
@@ -148,6 +243,7 @@ $auditScript = Join-Path $PSScriptRoot "audit_overlay_vpcf.py"
 if (Test-Path -LiteralPath $auditScript -PathType Leaf) {
     python $auditScript $particleDir `
         --root-pattern "mvp_overlay.vpcf" `
+        --root-pattern "mvp_atlas_overlay.vpcf" `
         --strict
     if ($LASTEXITCODE -ne 0) {
         throw "Overlay VPCF audit failed with exit code $LASTEXITCODE."

@@ -12,5 +12,9 @@ MVP 动画素材包：
 本仓库没有为该素材声明公共再分发许可。发布公开源码或公开 VPK 前，应先确认素材
 权利与分发范围。
 
-当前运行时素材为 `assets/generated/mvp_emblem_transparent.png`：它由本次会话根据用户
-授权生成，并通过 chroma-key 抠图获得透明背景。发布前仍应由项目权利人确认其可分发范围。
+当前默认运行时素材为 `assets/generated/mvp_emblem_transparent.png`：它由本次会话
+根据用户授权生成，并通过 chroma-key 抠图获得透明背景。
+
+原始 60 帧素材包同时保留为可选的 sequence-atlas 测试效果，由
+`swift_mvp_test_atlas` 单独触发，不替换默认回合 MVP 效果。两套素材在公开发布前都
+应由项目权利人确认可分发范围。

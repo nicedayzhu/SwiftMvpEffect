@@ -57,9 +57,6 @@ foreach ($obsolete in @(
         (Join-Path $contentMaterialDir "mvp_animation_stage_2.vtex"),
         (Join-Path $contentMaterialDir "mvp_animation_stage_3.vtex"),
         (Join-Path $contentMaterialDir "mvp_animation_stage_4.vtex"),
-        (Join-Path $contentMaterialDir "mvp_animation_60f.mks"),
-        (Join-Path $contentMaterialDir "mvp_animation_60f.vtex"),
-        (Join-Path $contentMaterialDir "mvp_frame_001.png"),
         (Join-Path $contentParticleDir "mvp_overlay_stage_1.vpcf"),
         (Join-Path $contentParticleDir "mvp_overlay_stage_2.vpcf"),
         (Join-Path $contentParticleDir "mvp_overlay_stage_3.vpcf"),
@@ -68,7 +65,6 @@ foreach ($obsolete in @(
         (Join-Path $gameMaterialDir "mvp_animation_stage_2.vtex_c"),
         (Join-Path $gameMaterialDir "mvp_animation_stage_3.vtex_c"),
         (Join-Path $gameMaterialDir "mvp_animation_stage_4.vtex_c"),
-        (Join-Path $gameMaterialDir "mvp_animation_60f.vtex_c"),
         (Join-Path $gameParticleDir "mvp_overlay_stage_1.vpcf_c"),
         (Join-Path $gameParticleDir "mvp_overlay_stage_2.vpcf_c"),
         (Join-Path $gameParticleDir "mvp_overlay_stage_3.vpcf_c"),
@@ -77,18 +73,37 @@ foreach ($obsolete in @(
         Remove-Item -LiteralPath $obsolete -Force
     }
 }
-foreach ($staleFrame in Get-ChildItem -LiteralPath $contentMaterialDir -File -Filter "mvp_frame_*.png") {
+foreach ($staleFrame in Get-ChildItem `
+        -LiteralPath $contentMaterialDir `
+        -File `
+        -Filter "mvp_frame_*.png") {
     Remove-Item -LiteralPath $staleFrame.FullName -Force
 }
 Copy-Item -LiteralPath (Join-Path $sourceMaterialDir "mvp_emblem.png") `
     -Destination $contentMaterialDir -Force
 Copy-Item -LiteralPath (Join-Path $sourceMaterialDir "mvp_emblem.vtex") `
     -Destination $contentMaterialDir -Force
+Copy-Item -LiteralPath (Join-Path $sourceMaterialDir "mvp_animation_60f.mks") `
+    -Destination $contentMaterialDir -Force
+Copy-Item -LiteralPath (Join-Path $sourceMaterialDir "mvp_animation_60f.vtex") `
+    -Destination $contentMaterialDir -Force
+foreach ($frame in Get-ChildItem `
+        -LiteralPath $sourceMaterialDir `
+        -File `
+        -Filter "mvp_frame_*.png") {
+    Copy-Item -LiteralPath $frame.FullName `
+        -Destination $contentMaterialDir `
+        -Force
+}
 Copy-Item -LiteralPath (Join-Path $sourceParticleDir "mvp_overlay.vpcf") `
+    -Destination $contentParticleDir -Force
+Copy-Item -LiteralPath (Join-Path $sourceParticleDir "mvp_atlas_overlay.vpcf") `
     -Destination $contentParticleDir -Force
 $inputs = @(
     (Join-Path $contentMaterialDir "mvp_emblem.vtex"),
-    (Join-Path $contentParticleDir "mvp_overlay.vpcf")
+    (Join-Path $contentMaterialDir "mvp_animation_60f.vtex"),
+    (Join-Path $contentParticleDir "mvp_overlay.vpcf"),
+    (Join-Path $contentParticleDir "mvp_atlas_overlay.vpcf")
 )
 $buildDir = Join-Path $projectRoot "build"
 New-Item -ItemType Directory -Force -Path $buildDir | Out-Null
@@ -114,7 +129,9 @@ if ($LASTEXITCODE -ne 0) {
 
 $compiledOutputs = @(
     (Join-Path $gameMaterialDir "mvp_emblem.vtex_c"),
-    (Join-Path $gameParticleDir "mvp_overlay.vpcf_c")
+    (Join-Path $gameMaterialDir "mvp_animation_60f.vtex_c"),
+    (Join-Path $gameParticleDir "mvp_overlay.vpcf_c"),
+    (Join-Path $gameParticleDir "mvp_atlas_overlay.vpcf_c")
 )
 foreach ($required in $compiledOutputs) {
     if (!(Test-Path -LiteralPath $required -PathType Leaf)) {

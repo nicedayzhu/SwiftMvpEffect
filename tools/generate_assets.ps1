@@ -1,7 +1,10 @@
 param(
     [string]$SourceImage = (
         Join-Path $PSScriptRoot "..\assets\generated\mvp_emblem_transparent.png"),
-    [int]$CanvasSize = 1024
+    [int]$CanvasSize = 1024,
+    [string]$SourceArchive = (
+        Join-Path $PSScriptRoot "..\assets\source\clean_gold_operator_mvp_animation_pack_60f.zip"),
+    [int]$AtlasCanvasSize = 512
 )
 
 $ErrorActionPreference = "Stop"
@@ -14,14 +17,19 @@ if ($PSVersionTable.PSEdition -ne "Core" -or $PSVersionTable.PSVersion.Major -lt
     }
 
     & $pwsh.Source -NoProfile -ExecutionPolicy Bypass -File $PSCommandPath `
-        -SourceImage $SourceImage -CanvasSize $CanvasSize
+        -SourceImage $SourceImage `
+        -CanvasSize $CanvasSize `
+        -SourceArchive $SourceArchive `
+        -AtlasCanvasSize $AtlasCanvasSize
     exit $LASTEXITCODE
 }
 
 Add-Type -AssemblyName System.Drawing
+Add-Type -AssemblyName System.IO.Compression
 
 $projectRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
 $sourceImagePath = [System.IO.Path]::GetFullPath($SourceImage)
+$archivePath = [System.IO.Path]::GetFullPath($SourceArchive)
 $materialDir = Join-Path $projectRoot "resources_src\materials\swift_mvp_effect"
 $particleDir = Join-Path $projectRoot "resources_src\particles\swift_mvp_effect"
 $templateDir = Join-Path $PSScriptRoot "templates"
@@ -29,8 +37,14 @@ $templateDir = Join-Path $PSScriptRoot "templates"
 if (!(Test-Path -LiteralPath $sourceImagePath -PathType Leaf)) {
     throw "Transparent MVP source image not found: $sourceImagePath"
 }
+if (!(Test-Path -LiteralPath $archivePath -PathType Leaf)) {
+    throw "MVP sequence source archive not found: $archivePath"
+}
 if ($CanvasSize -lt 256 -or $CanvasSize -gt 1024) {
     throw "CanvasSize must be between 256 and 1024."
+}
+if ($AtlasCanvasSize -lt 256 -or $AtlasCanvasSize -gt 1024) {
+    throw "AtlasCanvasSize must be between 256 and 1024."
 }
 
 New-Item -ItemType Directory -Force -Path $materialDir | Out-Null
@@ -153,9 +167,146 @@ finally {
     $source.Dispose()
 }
 
+$archive = [System.IO.Compression.ZipFile]::OpenRead($archivePath)
+try {
+    $entries = @(
+        $archive.Entries |
+            Where-Object {
+                $_.FullName -match
+                    '^clean_gold_operator_mvp_60_frames/clean_gold_operator_mvp_frame_[0-9]{3}\.png$'
+            } |
+            Sort-Object FullName
+    )
+    if ($entries.Count -ne 60) {
+        throw "Expected exactly 60 sequence PNG frames, found $($entries.Count)."
+    }
+
+    $expectedFrameNames = [System.Collections.Generic.HashSet[string]]::new(
+        [System.StringComparer]::OrdinalIgnoreCase)
+    $atlasSourceWidth = 0
+    $atlasSourceHeight = 0
+
+    for ($index = 0; $index -lt $entries.Count; $index++) {
+        $entry = $entries[$index]
+        $entryStream = $entry.Open()
+        try {
+            $frameSource = [System.Drawing.Image]::FromStream($entryStream)
+            try {
+                if ($index -eq 0) {
+                    $atlasSourceWidth = $frameSource.Width
+                    $atlasSourceHeight = $frameSource.Height
+                }
+                elseif ($frameSource.Width -ne $atlasSourceWidth -or
+                    $frameSource.Height -ne $atlasSourceHeight) {
+                    throw "Sequence frame dimensions are inconsistent at $($entry.FullName)."
+                }
+
+                if ($atlasSourceWidth -ne 1280 -or $atlasSourceHeight -ne 512) {
+                    throw (
+                        "Expected 1280x512 sequence frames, got " +
+                        "${atlasSourceWidth}x${atlasSourceHeight}.")
+                }
+
+                $atlasTargetWidth = $AtlasCanvasSize
+                $atlasTargetHeight = [Math]::Max(
+                    1,
+                    [int][Math]::Round(
+                        $AtlasCanvasSize *
+                        ($atlasSourceHeight / [double]$atlasSourceWidth)))
+                $atlasTargetX = 0
+                $atlasTargetY = [int][Math]::Floor(
+                    ($AtlasCanvasSize - $atlasTargetHeight) / 2.0)
+
+                $atlasCarrier = [System.Drawing.Bitmap]::new(
+                    $AtlasCanvasSize,
+                    $AtlasCanvasSize,
+                    [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
+                try {
+                    $graphics = [System.Drawing.Graphics]::FromImage($atlasCarrier)
+                    try {
+                        $graphics.Clear([System.Drawing.Color]::Transparent)
+                        $graphics.CompositingMode =
+                            [System.Drawing.Drawing2D.CompositingMode]::SourceCopy
+                        $graphics.CompositingQuality =
+                            [System.Drawing.Drawing2D.CompositingQuality]::HighQuality
+                        $graphics.InterpolationMode =
+                            [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
+                        $graphics.PixelOffsetMode =
+                            [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
+                        $graphics.DrawImage(
+                            $frameSource,
+                            [System.Drawing.Rectangle]::new(
+                                $atlasTargetX,
+                                $atlasTargetY,
+                                $atlasTargetWidth,
+                                $atlasTargetHeight),
+                            0,
+                            0,
+                            $atlasSourceWidth,
+                            $atlasSourceHeight,
+                            [System.Drawing.GraphicsUnit]::Pixel)
+                    }
+                    finally {
+                        $graphics.Dispose()
+                    }
+
+                    $frameName = "mvp_frame_{0:D3}.png" -f ($index + 1)
+                    [void]$expectedFrameNames.Add($frameName)
+                    $memory = [System.IO.MemoryStream]::new()
+                    try {
+                        $atlasCarrier.Save(
+                            $memory,
+                            [System.Drawing.Imaging.ImageFormat]::Png)
+                        Save-BytesIfChanged `
+                            -Bytes $memory.ToArray() `
+                            -Path (Join-Path $materialDir $frameName)
+                    }
+                    finally {
+                        $memory.Dispose()
+                    }
+                }
+                finally {
+                    $atlasCarrier.Dispose()
+                }
+            }
+            finally {
+                $frameSource.Dispose()
+            }
+        }
+        finally {
+            $entryStream.Dispose()
+        }
+    }
+
+    foreach ($staleFrame in Get-ChildItem `
+            -LiteralPath $materialDir `
+            -File `
+            -Filter "mvp_frame_*.png") {
+        if (!$expectedFrameNames.Contains($staleFrame.Name)) {
+            Remove-Item -LiteralPath $staleFrame.FullName -Force
+        }
+    }
+}
+finally {
+    $archive.Dispose()
+}
+
+$mksLines = [System.Collections.Generic.List[string]]::new()
+$mksLines.Add("sequence 0")
+$mksLines.Add("")
+for ($frame = 1; $frame -le 60; $frame++) {
+    $mksLines.Add(("frame mvp_frame_{0:D3}.png 1" -f $frame))
+}
+$mksLines.Add("")
+Save-TextIfChanged `
+    -Text ($mksLines -join "`n") `
+    -Path (Join-Path $materialDir "mvp_animation_60f.mks")
+
 $vtexTemplate = Get-Content -Raw -LiteralPath (
     Join-Path $templateDir "mvp_emblem.vtex.tmpl")
-$vpcfTemplate = Get-Content -Raw -LiteralPath (
+$atlasVtexTemplate = Get-Content -Raw -LiteralPath (
+    Join-Path $templateDir "mvp_animation_60f.vtex.tmpl")
+$vpcfBaseTemplate = Get-Content -Raw -LiteralPath (
     Join-Path $templateDir "mvp_overlay.vpcf.tmpl")
 
 $motionSegments = @(
@@ -396,19 +547,43 @@ for ($index = 0; $index -lt $motionSegments.Count; $index++) {
 		},
 "@
 }
-$vpcfTemplate = $vpcfTemplate.Replace(
+$emblemVpcf = $vpcfBaseTemplate.Replace(
     "{{MOTION_RENDERERS}}",
     $motionRendererBlocks -join "")
-if ($vpcfTemplate.Contains("{{MOTION_RENDERERS}}")) {
-    throw "Failed to expand the VPCF motion renderer template."
+$atlasMotionRendererBlocks = @(
+    foreach ($rendererBlock in $motionRendererBlocks) {
+        $atlasRendererBlock = $rendererBlock.Replace(
+            'resource:"materials/swift_mvp_effect/mvp_emblem.vtex"',
+            'resource:"materials/swift_mvp_effect/mvp_animation_60f.vtex"')
+        $atlasRendererBlock = $atlasRendererBlock.Replace(
+            'm_nAnimationType = "ANIMATION_TYPE_MANUAL_FRAMES"',
+            (
+                'm_nAnimationType = "ANIMATION_TYPE_FIT_LIFETIME"' +
+                "`n`t`t`tm_flAnimationRate = 25.000000" +
+                "`n`t`t`tm_bAnimateInFPS = true"))
+        $atlasRendererBlock
+    }
+)
+$atlasVpcf = $vpcfBaseTemplate.Replace(
+    "{{MOTION_RENDERERS}}",
+    $atlasMotionRendererBlocks -join "")
+if ($emblemVpcf.Contains("{{MOTION_RENDERERS}}") -or
+    $atlasVpcf.Contains("{{MOTION_RENDERERS}}")) {
+    throw "Failed to expand one or more VPCF motion renderer templates."
 }
 
 Save-TextIfChanged `
     -Text $vtexTemplate `
     -Path (Join-Path $materialDir "mvp_emblem.vtex")
 Save-TextIfChanged `
-    -Text $vpcfTemplate `
+    -Text $atlasVtexTemplate `
+    -Path (Join-Path $materialDir "mvp_animation_60f.vtex")
+Save-TextIfChanged `
+    -Text $emblemVpcf `
     -Path (Join-Path $particleDir "mvp_overlay.vpcf")
+Save-TextIfChanged `
+    -Text $atlasVpcf `
+    -Path (Join-Path $particleDir "mvp_atlas_overlay.vpcf")
 
 foreach ($obsolete in @(
         (Join-Path $materialDir "mvp_animation_stage_1.mks"),
@@ -419,8 +594,6 @@ foreach ($obsolete in @(
         (Join-Path $materialDir "mvp_animation_stage_2.vtex"),
         (Join-Path $materialDir "mvp_animation_stage_3.vtex"),
         (Join-Path $materialDir "mvp_animation_stage_4.vtex"),
-        (Join-Path $materialDir "mvp_animation_60f.mks"),
-        (Join-Path $materialDir "mvp_animation_60f.vtex"),
         (Join-Path $particleDir "mvp_overlay_stage_1.vpcf"),
         (Join-Path $particleDir "mvp_overlay_stage_2.vpcf"),
         (Join-Path $particleDir "mvp_overlay_stage_3.vpcf"),
@@ -428,9 +601,6 @@ foreach ($obsolete in @(
     if (Test-Path -LiteralPath $obsolete) {
         Remove-Item -LiteralPath $obsolete -Force
     }
-}
-foreach ($staleFrame in Get-ChildItem -LiteralPath $materialDir -File -Filter "mvp_frame_*.png") {
-    Remove-Item -LiteralPath $staleFrame.FullName -Force
 }
 
 $manifest = [ordered]@{
@@ -441,6 +611,17 @@ $manifest = [ordered]@{
     sourceFrameHeight = $sourceHeight
     frameCount = 1
     framesPerSecond = 0
+    atlasSourceArchive = [System.IO.Path]::GetFileName($archivePath)
+    atlasSourceSha256 = (
+        Get-FileHash -Algorithm SHA256 -LiteralPath $archivePath
+    ).Hash.ToLowerInvariant()
+    atlasSourceFrameWidth = $atlasSourceWidth
+    atlasSourceFrameHeight = $atlasSourceHeight
+    atlasFrameCount = 60
+    atlasFramesPerSecond = 25
+    atlasCarrierWidth = $AtlasCanvasSize
+    atlasCarrierHeight = $AtlasCanvasSize
+    atlasVisibleContentHeight = $atlasTargetHeight
     durationSeconds = 2.4
     rootCount = 1
     framesPerRoot = 1
@@ -454,12 +635,19 @@ $manifest = [ordered]@{
     carrierHeight = $CanvasSize
     visibleContentHeight = [int][Math]::Round(
         $CanvasSize * ($sourceHeight / [double]$sourceWidth))
-    particles = @("particles/swift_mvp_effect/mvp_overlay.vpcf")
-    textures = @("materials/swift_mvp_effect/mvp_emblem.vtex")
+    particles = @(
+        "particles/swift_mvp_effect/mvp_overlay.vpcf",
+        "particles/swift_mvp_effect/mvp_atlas_overlay.vpcf"
+    )
+    textures = @(
+        "materials/swift_mvp_effect/mvp_emblem.vtex",
+        "materials/swift_mvp_effect/mvp_animation_60f.vtex"
+    )
 }
 Save-TextIfChanged `
     -Text (($manifest | ConvertTo-Json -Depth 4) + "`n") `
     -Path (Join-Path $projectRoot "resources_src\asset_manifest.json")
 
 Write-Host (
-    "Generated one transparent MVP emblem carrier (${CanvasSize}x${CanvasSize}) and one client-animated Source 2 root.")
+    "Generated the transparent emblem plus a preserved 60-frame " +
+    "sequence atlas and two client-animated Source 2 roots.")

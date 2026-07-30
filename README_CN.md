@@ -5,6 +5,9 @@ CS2 发出 `round_mvp` 事件时，插件为目标观看者创建 owner-only
 `info_particle_system`，客户端播放透明金色 MVP 主视觉。位置、缩放回弹和淡入淡出由
 VPCF 的集合生命周期在客户端本地计算，服务器只负责创建与清理实体。
 
+历史版本中已经验证过的 60 帧 sequence-atlas 金色 MVP 横幅也被保留为独立测试效果；
+它不会增加默认 `round_mvp` 路径的渲染负担，只有执行专用命令时才创建。
+
 ![透明 MVP 主视觉](assets/generated/mvp_emblem_transparent.png)
 
 ## 已实现
@@ -12,7 +15,9 @@ VPCF 的集合生命周期在客户端本地计算，服务器只负责创建与
 - 自动监听 `round_mvp`
 - 默认向所有在线玩家展示，可配置为只向 MVP 玩家展示
 - `swift_mvp_test` 单人测试命令
+- `swift_mvp_test_atlas`：播放保留的 60 帧、25 FPS sequence-atlas 横幅
 - 单个透明 MVP 主视觉、VTEX、VPCF 自动生成
+- 原始 60 帧 ZIP → 60 张 512×512 carrier、MKS、4096 RGBA atlas 和独立 VPCF
 - 透明源图 → 1024×1024 透明 carrier、无损 1024 纹理，显著降低首次显示开销
 - 默认 `scale=0.50`，客户端从左侧滑入、轻微回弹、中心停留并从右侧加速滑出
 - 每名观看者独立 transmit，其他玩家明确不可见
@@ -57,7 +62,9 @@ pwsh -NoProfile -File .\tools\build_source2_assets.ps1 -Force
 
 ```text
 game/csgo_addons/swift_mvp_effect/
+  materials/swift_mvp_effect/mvp_animation_60f.vtex_c
   materials/swift_mvp_effect/mvp_emblem.vtex_c
+  particles/swift_mvp_effect/mvp_atlas_overlay.vpcf_c
   particles/swift_mvp_effect/mvp_overlay.vpcf_c
 ```
 
@@ -116,8 +123,8 @@ pwsh -NoProfile -ExecutionPolicy Bypass `
 
 1. 离线资源与 C# 验证。
 2. 发布 `SwiftMvpEffect.dll` 与配置。
-3. 编译 1 个 VTEX_C 和 1 个 VPCF_C。
-4. 只把上述 2 个 `_c` 文件打包为 `swift_mvp_effect.vpk`。
+3. 编译 2 个 VTEX_C 和 2 个 VPCF_C。
+4. 只把上述 4 个 `_c` 文件打包为 `swift_mvp_effect.vpk`。
 5. 校验 VPK checksums、CS2 v2 单文件容器头（无 archive-MD5 chunk 区段），并解包核对文件清单。
 6. 安装相同 VPK 到客户端和专用服务器。
 7. 备份并修改两端 `gameinfo.gi` SearchPaths；服务器会把
@@ -129,6 +136,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass `
 
 ```text
 swift_mvp_test
+swift_mvp_test_atlas
 ```
 
 只复核现有部署，不重建：
@@ -168,4 +176,5 @@ MVP 只在开始时写入一次 CP34（scale 与纵向偏移）。单个 VPCF �
 回弹，0.52–1.62 秒在中心停留，1.62–2.24 秒向右加速飞出，余下时间在屏幕外完成
 淡出。`m_flRadiusScale` 同步完成入场回弹与离场收缩，`C_OP_FadeInSimple` /
 `C_OP_FadeOutSimple` 负责粒子 alpha；因此不存在服务端逐 Tick 的控制点复制，也没有
-黑色背景。
+黑色背景。默认 VPCF 使用静态透明纹理；atlas VPCF 使用相同的运动契约，并让每个活动
+renderer 以 `ANIMATION_TYPE_FIT_LIFETIME`、25 FPS 播放同一 60 帧 sequence。

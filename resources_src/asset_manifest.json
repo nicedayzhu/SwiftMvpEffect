@@ -6,6 +6,15 @@
   "sourceFrameHeight": 941,
   "frameCount": 1,
   "framesPerSecond": 0,
+  "atlasSourceArchive": "clean_gold_operator_mvp_animation_pack_60f.zip",
+  "atlasSourceSha256": "95a0076dbe99e7b109861830ed2070ed58d201dd234ed11dad335b5676827f1c",
+  "atlasSourceFrameWidth": 1280,
+  "atlasSourceFrameHeight": 512,
+  "atlasFrameCount": 60,
+  "atlasFramesPerSecond": 25,
+  "atlasCarrierWidth": 512,
+  "atlasCarrierHeight": 512,
+  "atlasVisibleContentHeight": 205,
   "durationSeconds": 2.4,
   "rootCount": 1,
   "framesPerRoot": 1,
@@ -19,9 +28,11 @@
   "carrierHeight": 1024,
   "visibleContentHeight": 576,
   "particles": [
-    "particles/swift_mvp_effect/mvp_overlay.vpcf"
+    "particles/swift_mvp_effect/mvp_overlay.vpcf",
+    "particles/swift_mvp_effect/mvp_atlas_overlay.vpcf"
   ],
   "textures": [
-    "materials/swift_mvp_effect/mvp_emblem.vtex"
+    "materials/swift_mvp_effect/mvp_emblem.vtex",
+    "materials/swift_mvp_effect/mvp_animation_60f.vtex"
   ]
 }

@@ -27,6 +27,14 @@ OVERLAY_RE = re.compile(
     r"\bm_bOnlyRenderInEffecsGameOverlay\s*=\s*true\b",
     re.IGNORECASE,
 )
+COLLECTION_RENDERER_INPUT_RE = re.compile(
+    r"\b(m_fl(?:AlphaScale|RadiusScale|CenterXOffset|CenterYOffset))\s*=\s*"
+    r"\{(?P<body>.*?)\n\s*\}",
+    re.DOTALL,
+)
+PARTICLE_AGE_TYPE_RE = re.compile(
+    r'\bm_nType\s*=\s*"(PF_TYPE_PARTICLE_AGE(?:_NORMALIZED)?)"'
+)
 
 
 @dataclass
@@ -39,6 +47,7 @@ class Audit:
     children: list[str]
     textures: list[str]
     unresolved_tokens: list[str]
+    renderer_particle_age_inputs: list[str]
     errors: list[str]
     warnings: list[str]
 
@@ -110,6 +119,19 @@ def audit_file(
         message = "overlay root candidate has no system m_flDepthSortBias"
         (errors if strict else warnings).append(message)
 
+    renderer_particle_age_inputs: list[str] = []
+    for renderer_input in COLLECTION_RENDERER_INPUT_RE.finditer(text):
+        particle_age = PARTICLE_AGE_TYPE_RE.search(
+            renderer_input.group("body")
+        )
+        if particle_age is not None:
+            renderer_particle_age_inputs.append(
+                f"{renderer_input.group(1)}={particle_age.group(1)}"
+            )
+    renderer_particle_age_inputs = sorted(set(renderer_particle_age_inputs))
+    if renderer_particle_age_inputs:
+        errors.append("collection renderer input(s) use per-particle age")
+
     children = CHILD_RE.findall(text)
     duplicate_children = sorted(
         child for child in set(children) if children.count(child) > 1
@@ -130,6 +152,7 @@ def audit_file(
         children=children,
         textures=TEXTURE_RE.findall(text),
         unresolved_tokens=unresolved,
+        renderer_particle_age_inputs=renderer_particle_age_inputs,
         errors=errors,
         warnings=warnings,
     )
@@ -159,6 +182,11 @@ def text_report(audits: list[Audit]) -> None:
             flags.append("ERROR=" + "; ".join(item.errors))
         if item.warnings:
             flags.append("WARN=" + "; ".join(item.warnings))
+        if item.renderer_particle_age_inputs:
+            flags.append(
+                "RENDERER_PARTICLE_AGE="
+                + ", ".join(item.renderer_particle_age_inputs)
+            )
         suffix = " | " + " | ".join(flags) if flags else ""
         print(
             f"{item.path} | overlay={item.overlay} "

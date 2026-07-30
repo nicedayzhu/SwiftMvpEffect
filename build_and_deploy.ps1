@@ -196,7 +196,7 @@ try {
     Write-Host ""
     Write-Host "SwiftMvpEffect test deployment is complete."
     Write-Host "Restart both CS2 client and dedicated server."
-    Write-Host "Then run: swift_mvp_test"
+    Write-Host "Then run: swift_mvp_test or swift_mvp_test_atlas"
 }
 finally {
     if (Test-Path -LiteralPath $stagePluginDir) {
