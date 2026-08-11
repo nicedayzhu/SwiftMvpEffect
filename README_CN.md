@@ -7,6 +7,8 @@
 
 ## 演示
 
+[![MVP 效果演示预览](docs/mvp_effect_demo_poster.png)](docs/mvp_effect_demo.mp4)
+
 <video controls preload="metadata" poster="docs/mvp_effect_demo_poster.png" width="960">
   <source src="docs/mvp_effect_demo.mp4" type="video/mp4">
   当前 Markdown 查看器不支持内嵌视频。
