@@ -2,15 +2,8 @@
 
 [English](README.md) | **简体中文**
 
-基于 Swift Particle Menu 已验证架构制作的 SwiftlyS2 回合 MVP 屏幕粒子插件。
-CS2 发出 `round_mvp` 事件时，插件为目标观看者创建 owner-only
-`info_particle_system`，客户端播放透明金色 MVP 主视觉。位置、缩放回弹和淡入淡出由
-VPCF 的集合生命周期在客户端本地计算，服务器只负责创建与清理实体。
-
-历史版本中已经验证过的 60 帧 sequence-atlas 金色 MVP 横幅也被保留为独立测试效果；
-它不会增加默认 `round_mvp` 路径的渲染负担，只有执行专用命令时才创建。
-
-![透明 MVP 主视觉](assets/generated/mvp_emblem_transparent.png)
+一个在 CS2 触发 `round_mvp` 时展示客户端动画 MVP 粒子 overlay 的 SwiftlyS2
+插件。每名观看者拥有独立可见的效果，服务器只负责创建、可见性控制与清理。
 
 ## 演示
 
@@ -20,45 +13,22 @@ VPCF 的集合生命周期在客户端本地计算，服务器只负责创建与
   <a href="docs/mvp_effect_demo.mp4">打开 MP4 演示</a>。
 </video>
 
-[打开或下载游戏内 MVP 效果演示（MP4）](docs/mvp_effect_demo.mp4)
+[打开或下载游戏内演示（MP4）](docs/mvp_effect_demo.mp4)
 
-该视频仅作为文档演示素材，不会进入 Source 2 资源构建或 override VPK。
+## 核心特点
 
-## 已实现
+- 自动响应 `round_mvp`。
+- 可向所有玩家展示，也可只向 MVP 玩家展示。
+- 为每名观看者提供 owner-only transmit 隔离。
+- 移动、缩放与淡入淡出全部由客户端本地计算。
+- 包含默认透明 MVP 主视觉与可选的 60 帧 atlas 测试效果。
+- 重复触发、断线、回合开始与卸载时均可安全清理。
+- 提供 Source 2 资源生成、验证和测试部署自动化。
 
-- 自动监听 `round_mvp`
-- 默认向所有在线玩家展示，可配置为只向 MVP 玩家展示
-- `swift_mvp_test` 单人测试命令
-- `swift_mvp_test_atlas`：播放保留的 60 帧、25 FPS sequence-atlas 横幅
-- 单个透明 MVP 主视觉、VTEX、VPCF 自动生成
-- 原始 60 帧 ZIP → 60 张 512×512 carrier、MKS、4096 RGBA atlas 和独立 VPCF
-- 透明源图 → 1024×1024 透明 carrier、无损 1024 纹理，显著降低首次显示开销
-- 默认 `scale=0.50`，客户端从左侧滑入、轻微回弹、中心停留并从右侧加速滑出
-- 每名观看者独立 transmit，其他玩家明确不可见
-- 重复触发、断线、下一回合、卸载时幂等清理
-- Source 2 资源编译与严格验证脚本
+## 快速开始
 
-## 配置
-
-编辑插件目录里的 `mvp_effect.json`：
-
-```json
-{
-  "enabled": true,
-  "audience": "all",
-  "scale": 0.50,
-  "offsetY": 0.04
-}
-```
-
-`audience` 可为：
-
-- `all`：所有在线玩家
-- `mvp`：仅 MVP 玩家
-
-配置在插件加载时读取，修改后请重载插件。
-
-## 构建
+需要 .NET 10、PowerShell 7+、SwiftlyS2.CS2 1.4.3；编译游戏资源时还需要
+CS2 Workshop Tools。
 
 ```powershell
 pwsh -NoProfile -File .\tools\generate_assets.ps1
@@ -66,129 +36,31 @@ dotnet restore --ignore-failed-sources
 pwsh -NoProfile -File .\tools\verify.ps1
 ```
 
-编译 Source 2 资源（需要已安装 CS2 Workshop Tools）：
+Source 2 编译、测试部署、SearchPaths 与 Workshop 发布说明请查看
+[技术指南](docs/TECHNICAL_GUIDE_CN.md)。
 
-```powershell
-pwsh -NoProfile -File .\tools\build_source2_assets.ps1 -Force
-```
+## 配置
 
-默认 addon namespace 为 `swift_mvp_effect`。编译后关键文件是：
+插件启动时读取 `mvp_effect.json`。配置支持启用/禁用效果、选择向 `all` 或 `mvp`
+展示，以及调整缩放和纵向偏移；修改后需要重载插件。
 
-```text
-game/csgo_addons/swift_mvp_effect/
-  materials/swift_mvp_effect/mvp_animation_60f.vtex_c
-  materials/swift_mvp_effect/mvp_emblem.vtex_c
-  particles/swift_mvp_effect/mvp_atlas_overlay.vpcf_c
-  particles/swift_mvp_effect/mvp_overlay.vpcf_c
-```
+[配置参考](docs/TECHNICAL_GUIDE_CN.md#配置)
 
-插件 DLL 与 `mvp_effect.json` 由 `dotnet publish -c Release` 生成在：
+## 测试命令
 
-```text
-build/publish/SwiftMvpEffect/
-```
+| 命令 | 用途 |
+|---|---|
+| `swift_mvp_test` | 为单名玩家播放默认透明 MVP 效果 |
+| `swift_mvp_test_atlas` | 播放保留的 60 帧 atlas 版本 |
 
-## 部署注意
+## 文档
 
-客户端和服务器都必须挂载同一份已编译资源。资源或 VPK 更新后要同时重启客户端与
-服务器；只热重载 DLL 不会刷新客户端缓存的 VTEX/VPCF。
+- [技术指南](docs/TECHNICAL_GUIDE_CN.md)：架构、资源流水线、构建、验证、部署与正式
+  发布。
+- [English technical guide](docs/TECHNICAL_GUIDE.md)。
+- [第三方素材说明](THIRD_PARTY_ASSETS.md)：源素材及再分发注意事项。
 
-### 发布渠道说明（重要）
+## 发布说明
 
-本项目当前提供的 `gameinfo.gi + overrides/*.vpk` 流程只用于本地开发、测试服联调和
-上线前验收，不是最终面向玩家的正式分发方式。不要要求正式服玩家手工修改
-`gameinfo.gi` 或复制本地 VPK。
-
-| 场景 | 粒子资源交付 | SwiftlyS2 插件交付 |
-|---|---|---|
-| 本地开发/测试服 | `swift_mvp_effect.vpk` 挂载到客户端和服务器的 `overrides` | 由部署脚本复制 DLL 与配置到测试服 |
-| 正式发布 | 将审核后的编译资源作为 CS2 Workshop 内容上传并按 Workshop 项目版本更新 | DLL 与配置仍由服主部署到服务器，不放入 Workshop 资源包 |
-
-正式发布预期流程：
-
-1. 完成素材授权、命名空间和版本检查。
-2. 继续使用本项目的验证与 Source 2 编译流程生成 VTEX_C/VPCF_C。
-3. 制作仅含获准发布资源的 Workshop payload；不得包含原始私有素材、开发脚本、
-   本机路径、服务器配置或 SwiftlyS2 DLL。
-4. 通过 CS2 Workshop Tools/Steam Workshop 创建或更新正式项目，记录 Workshop
-   Item ID、发布版本和变更说明。
-5. 服务器按运营环境配置 Workshop 内容的订阅/下载，同时单独部署
-   `SwiftMvpEffect.dll` 与 `mvp_effect.json`。
-6. 在干净客户端验证 Workshop 下载、资源 precache、MVP 自动触发和双客户端
-   transmit 隔离；资源更新后重启客户端与服务器。
-7. 验收通过后再从测试用 override 环境切换到 Workshop 分发，不把本地
-   `gameinfo.gi` 修改作为正式安装步骤。
-
-当前仓库尚未包含 Workshop 上传脚本和正式 Item ID；这些内容应在确定发布账号、
-Workshop 项目及素材授权后单独补充。现有 VPK 脚本会继续保留，作为快速联调和正式
-发布前的资源验收工具。
-
-### 一键 override 测试部署（仅开发/验收）
-
-默认路径与当前 Swift Particle Menu 测试环境一致：
-
-```powershell
-pwsh -NoProfile -ExecutionPolicy Bypass `
-  -File .\build_and_deploy.ps1 `
-  -ForceAssetRebuild
-```
-
-脚本依次执行：
-
-1. 离线资源与 C# 验证。
-2. 发布 `SwiftMvpEffect.dll` 与配置。
-3. 编译 2 个 VTEX_C 和 2 个 VPCF_C。
-4. 只把上述 4 个 `_c` 文件打包为 `swift_mvp_effect.vpk`。
-5. 校验 VPK checksums、CS2 v2 单文件容器头（无 archive-MD5 chunk 区段），并解包核对文件清单。
-6. 安装相同 VPK 到客户端和专用服务器。
-7. 备份并修改两端 `gameinfo.gi` SearchPaths；服务器会把
-   `Game csgo/addons/swiftlys2` 固定在所有 override VPK 之前，避免 SwiftlyS2
-   的服务器资源路径被测试包抢占。
-8. 部署 SwiftlyS2 插件，并比较 VPK、DLL、配置的 SHA-256。
-
-部署完成后完整重启客户端和服务器，然后在游戏控制台执行：
-
-```text
-swift_mvp_test
-swift_mvp_test_atlas
-```
-
-只复核现有部署，不重建：
-
-```powershell
-pwsh -NoProfile -File .\tools\verify_deployment.ps1
-```
-
-移除测试挂载、两端 VPK 与服务器插件：
-
-```powershell
-pwsh -NoProfile -File .\tools\uninstall_test_deployment.ps1
-```
-
-卸载脚本只删除该项目的精确路径，修改 `gameinfo.gi` 前仍会生成时间戳备份。
-
-服务器的 SearchPaths 需要保持如下优先级（其他已有 override 包可继续保留）：
-
-```text
-Game_LowViolence  csgo_lv
-Game              csgo/addons/swiftlys2
-Game              csgo/overrides/<existing-test-pack>.vpk
-Game              csgo/overrides/swift_mvp_effect.vpk
-Game              csgo
-```
-
-部署验证会拒绝 `csgo/addons/swiftlys2` 位于任意 override VPK 之后的服务器配置。
-
-## 架构来源
-
-- `bj`：序列图、屏幕 overlay、CP assignment 和 Start 前配置
-- `ptext`：独立会话、连接变化后的 transmit 隔离
-- `smb`：多实体生命周期与失败清理
-
-MVP 只在开始时写入一次 CP34（scale 与纵向偏移）。单个 VPCF 以
-`PF_TYPE_COLLECTION_AGE` 驱动 13 个连续 renderer 时间段：0–0.52 秒从左侧滑入并
-回弹，0.52–1.62 秒在中心停留，1.62–2.24 秒向右加速飞出，余下时间在屏幕外完成
-淡出。`m_flRadiusScale` 同步完成入场回弹与离场收缩，`C_OP_FadeInSimple` /
-`C_OP_FadeOutSimple` 负责粒子 alpha；因此不存在服务端逐 Tick 的控制点复制，也没有
-黑色背景。默认 VPCF 使用静态透明纹理；atlas VPCF 使用相同的运动契约，并让每个活动
-renderer 以 `ANIMATION_TYPE_FIT_LIFETIME`、25 FPS 播放同一 60 帧 sequence。
+现有 `gameinfo.gi + overrides/*.vpk` 流程只用于本地开发、测试服与发布前验收。
+正式粒子资源应通过 CS2 Workshop 分发；SwiftlyS2 DLL 与配置仍由服主单独部署。
