@@ -17,7 +17,13 @@ path and is created only by its dedicated test command.
 
 ## Demo
 
-[Watch the in-game MVP effect demo (MP4)](docs/mvp_effect_demo.mp4)
+<video controls preload="metadata" poster="docs/mvp_contact_sheet.jpg" width="960">
+  <source src="docs/mvp_effect_demo.mp4" type="video/mp4">
+  Your Markdown viewer does not support embedded video.
+  <a href="docs/mvp_effect_demo.mp4">Open the MP4 demo</a>.
+</video>
+
+[Open or download the in-game MVP effect demo (MP4)](docs/mvp_effect_demo.mp4)
 
 The video is documentation media only. It is not included in the Source 2 asset
 build or the override VPK.

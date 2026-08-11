@@ -14,7 +14,13 @@ VPCF 的集合生命周期在客户端本地计算，服务器只负责创建与
 
 ## 演示
 
-[观看游戏内 MVP 效果演示（MP4）](docs/mvp_effect_demo.mp4)
+<video controls preload="metadata" poster="docs/mvp_contact_sheet.jpg" width="960">
+  <source src="docs/mvp_effect_demo.mp4" type="video/mp4">
+  当前 Markdown 查看器不支持内嵌视频。
+  <a href="docs/mvp_effect_demo.mp4">打开 MP4 演示</a>。
+</video>
+
+[打开或下载游戏内 MVP 效果演示（MP4）](docs/mvp_effect_demo.mp4)
 
 该视频仅作为文档演示素材，不会进入 Source 2 资源构建或 override VPK。
 
