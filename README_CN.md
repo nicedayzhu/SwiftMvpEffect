@@ -14,7 +14,7 @@ VPCF 的集合生命周期在客户端本地计算，服务器只负责创建与
 
 ## 演示
 
-<video controls preload="metadata" poster="docs/mvp_contact_sheet.jpg" width="960">
+<video controls preload="metadata" poster="docs/mvp_effect_demo_poster.png" width="960">
   <source src="docs/mvp_effect_demo.mp4" type="video/mp4">
   当前 Markdown 查看器不支持内嵌视频。
   <a href="docs/mvp_effect_demo.mp4">打开 MP4 演示</a>。

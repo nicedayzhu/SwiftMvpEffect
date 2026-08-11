@@ -17,7 +17,7 @@ path and is created only by its dedicated test command.
 
 ## Demo
 
-<video controls preload="metadata" poster="docs/mvp_contact_sheet.jpg" width="960">
+<video controls preload="metadata" poster="docs/mvp_effect_demo_poster.png" width="960">
   <source src="docs/mvp_effect_demo.mp4" type="video/mp4">
   Your Markdown viewer does not support embedded video.
   <a href="docs/mvp_effect_demo.mp4">Open the MP4 demo</a>.
