@@ -1,5 +1,7 @@
 # SwiftMvpEffect
 
+[English](README.md) | **简体中文**
+
 基于 Swift Particle Menu 已验证架构制作的 SwiftlyS2 回合 MVP 屏幕粒子插件。
 CS2 发出 `round_mvp` 事件时，插件为目标观看者创建 owner-only
 `info_particle_system`，客户端播放透明金色 MVP 主视觉。位置、缩放回弹和淡入淡出由
@@ -9,6 +11,12 @@ VPCF 的集合生命周期在客户端本地计算，服务器只负责创建与
 它不会增加默认 `round_mvp` 路径的渲染负担，只有执行专用命令时才创建。
 
 ![透明 MVP 主视觉](assets/generated/mvp_emblem_transparent.png)
+
+## 演示
+
+[观看游戏内 MVP 效果演示（MP4）](docs/mvp_effect_demo.mp4)
+
+该视频仅作为文档演示素材，不会进入 Source 2 资源构建或 override VPK。
 
 ## 已实现
 
