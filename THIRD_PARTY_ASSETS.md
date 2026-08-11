@@ -1,5 +1,11 @@
 # 素材说明
 
+## 许可证边界
+
+根目录的 MIT License 适用于项目源代码与原创文档，不授予本文件所述第三方素材、
+用户提供素材、游戏演示视频及封面中的 Valve/CS2 内容或相关衍生游戏资源的权利。
+这些内容只有在其权利人另行授权时才可再分发。
+
 `assets/source/clean_gold_operator_mvp_animation_pack_60f.zip` 是用户为本项目早期提供的
 MVP 动画素材包：
 

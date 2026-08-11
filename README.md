@@ -72,3 +72,10 @@ The included `gameinfo.gi + overrides/*.vpk` workflow is intended only for local
 development, test servers, and release acceptance. Production particle resources
 should be distributed through CS2 Workshop, while the SwiftlyS2 DLL and
 configuration are deployed separately by the server owner.
+
+## License
+
+The project source code and original documentation are available under the
+[MIT License](LICENSE). Third-party assets, user-provided media, Valve/CS2
+content, and derived game assets are excluded unless separately licensed; see
+[Third-party asset notes](THIRD_PARTY_ASSETS.md).

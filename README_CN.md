@@ -66,3 +66,9 @@ Source 2 编译、测试部署、SearchPaths 与 Workshop 发布说明请查看
 
 现有 `gameinfo.gi + overrides/*.vpk` 流程只用于本地开发、测试服与发布前验收。
 正式粒子资源应通过 CS2 Workshop 分发；SwiftlyS2 DLL 与配置仍由服主单独部署。
+
+## 许可证
+
+项目源代码与原创文档采用 [MIT License](LICENSE)。第三方素材、用户提供的媒体、
+Valve/CS2 内容及其衍生游戏资源除非另有授权，否则不包含在 MIT 授权范围内；详情请
+参阅[第三方素材说明](THIRD_PARTY_ASSETS.md)。
